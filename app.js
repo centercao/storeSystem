@@ -17,15 +17,15 @@ const apiError = require("./middlewares/apiError");
 const FormatOutput = require("./middlewares/formatOutput");
 const accessToken = require("./middlewares/accessToken");
 const Mongodb = require("./middlewares/mongodbHelper");
-// const mongodb = new Mongodb({
-// 	host: 'localhost',
-// 	port: 27017,
-// 	user: 'dataUser',
-// 	pass: 'data2018',
-// 	db: 'careSystem',
-// 	max: 100,
-// 	min: 1,
-// });
+const mongodb = new Mongodb({
+	host: 'localhost',
+	port: 27017,
+	user: 'data',
+	pass: 'data@2019',
+	db: 'stores',
+	max: 100,
+	min: 1,
+});
 
 const app = new Koa();
 //配置session的中间件
@@ -80,7 +80,7 @@ function time(start,end) {
 		: Math.round(delta / 1000) + 's');
 }
 // Koa 推荐使用该命名空间挂载数据
-// app.context.mongodb = mongodb;
+app.context.mongodb = mongodb;
 
 // middlewares
 
