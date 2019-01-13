@@ -18,20 +18,8 @@ router.prefix('/users');
 // 返回用户页面
 router.get('/',  async function (ctx, next) {
 	await ctx.render('users', {
-		title:"账户管理"
+		title:"账户管理",theme:"blitzer"
 	});
-});
-// 获得信息
-router.get('/list',  async function (ctx, next) {
-	// let query = ctx.request.query;
-	let  where={};
-	let projection={pass:0};
-	let res = await ctx.mongodb.db.collection('users').find(where).project(projection).toArray();
-	for(let i =0, len = res.length;i<len;i++){
-		res[i].id = res[i]._id.toString();
-		delete res[i]._id;
-	}
-	ctx.body = {rows:res};
 });
 // 获得信息
 router.get('/:id',  async function (ctx, next) {

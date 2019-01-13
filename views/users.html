@@ -2,65 +2,23 @@
 <html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<link rel="stylesheet" type="text/css" media="screen" href="jqgrid/themes/ui-darkness/jquery-ui.min.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="themes/<%= theme %>/jquery-ui.min.css" />
+	<link rel="stylesheet" type="text/css" media="screen" href="select2/css/select2-<%= theme %>-theme.css" />
 	<link rel="stylesheet" type="text/css" media="screen" href="jqgrid/css/ui.jqgrid.min.css" />
-	<link rel="stylesheet" href="select2/css/select2.css" />
+	<link rel="stylesheet" href="select2/css/select2.min.css" />
 	<script src="javascripts/jquery-3.3.1.min.js" type="text/javascript"></script>
 	<script src="jqGrid/js/grid.locale-cn.min.js" type="text/javascript"></script>
 	<script src="jqGrid/js/jquery.jqGrid.min.js" type="text/javascript"></script>
 	<script src="javascripts/jquery-ui.min.js" type="text/javascript"></script>
+	<script type="text/javascript" src="select2/js/pinyin.min.js" ></script>
+	<script type="text/javascript" src="select2/js/select2.full.min.js" ></script>
 	<script type="text/javascript" src="select2/js/zh-CN.js" ></script>
-	<script type="text/javascript" src="select2/js/pinyin.js" ></script>
-	<script type="text/javascript" src="select2/js/select2.js" ></script>
 </head>
 <body>
 <h1><%= title %></h1>
-<select id="e1" style="width:40%;">
-	<option title="请选择省" value="-1" >请选择省...</option>
-	<option title="北京" value="110000" >北京</option>
-	<option title="安徽省" value="340000" >安徽省</option>
-	<option title="福建省" value="350000" >福建省</option>
-	<option title="江西省" value="360000" >江西省</option>
-	<option title="山东省" value="370000" >山东省</option>
-	<option title="河南省" value="410000" >河南省</option>
-	<option title="湖北省" value="420000" >湖北省</option>
-	<option title="湖南省" value="430000" >湖南省</option>
-	<option title="天津" value="120000" >天津</option>
-	<option title="广东省" value="440000" >广东省</option>
-	<option title="广西壮族自治区" value="450000" >广西壮族自治区</option>
-	<option title="山西省" value="140000" >山西省</option>
-	<option title="海南省" value="460000" >海南省</option>
-	<option title="重庆" value="500000" >重庆</option>
-	<option title="四川省" value="510000" >四川省</option>
-	<option title="贵州省" value="520000" >贵州省</option>
-	<option title="云南省" value="530000" >云南省</option>
-	<option title="西藏自治区" value="540000" >西藏自治区</option>
-	<option title="陕西省" value="610000" >陕西省</option>
-	<option title="甘肃省" value="620000" >甘肃省</option>
-	<option title="青海省" value="630000" >青海省</option>
-	<option title="宁夏回族自治区" value="640000" >宁夏回族自治区</option>
-	<option title="新疆维吾尔自治区" value="650000" >新疆维吾尔自治区</option>
-	<option title="台湾省" value="710000" >台湾省</option>
-	<option title="香港特别行政区" value="810000" >香港特别行政区</option>
-	<option title="澳门特别行政区" value="820000" >澳门特别行政区</option>
-	<option title="内蒙古自治区" value="150000" >内蒙古自治区</option>
-	<option title="河北省" value="130000" >河北省</option>
-	<option title="辽宁省" value="210000" >辽宁省</option>
-	<option title="吉林省" value="220000" >吉林省</option>
-	<option title="黑龙江省" value="230000" >黑龙江省</option>
-	<option title="上海" value="310000" >上海</option>
-	<option title="江苏省" value="320000" >江苏省</option>
-	<option title="浙江省" value="330000" >浙江省</option>
-</select>
 <table id="list"></table>
 <div id="pager"></div>
 <script type="text/javascript">
-	$("#e1").select2({
-		language: "zh-CN",
-		placeholder: "选择省..",
-		allowClear: true,
-
-	});
 	function pageSize() {
 		let winW, winH;
 		if(window.innerHeight) {// all except IE
@@ -83,33 +41,10 @@
 			$(window).bind("onresize", this);
 		});
 	});
-	// let userRole = {};
-	// $.ajax({
-	// 	cache: true,
-	// 	type: "get",
-	// 	timeout:2000,
-	// 	url: "/roles/list",
-	// 	data:{},
-	// 	async: true,
-	// 	headers: { // 叠加式添加
-	// 		Accept: "application/json; charset=utf-8",
-	// 		accessToken:"abcd"
-	// 	},
-	// 	beforeSend: function(xhr){
-	// 		// xhr.setRequestHeader('accessToken', 'test-value'); // 叠加式添加
-	// 	},
-	// 	error: function(xhr, statusText, errorThrown) { // XMLHttpRequest
-	// 		// alert("错误提示： status:" + xhr.status + " responseText:" + xhr.responseText);
-	// 		if(xhr.status != 200){
-	// 			alert("错误提示： status:" + xhr.status + " responseText:" + statusText);
-	// 		}
-	// 	},
-	// 	success: function(result,statusText,xhr) {
-	// 		userRole = result;
-	// 	}
-	// });
+	// $.fn.select2.defaults.theme_default = "jquery-ui";
 	$(document).ready(
 		function() {
+			$.fn.select2.defaults.set("theme", "<%= theme %>");
 			jQuery("#list").jqGrid({
 				url:'/users/list', //
 				datatype: "json",
@@ -121,16 +56,24 @@
 				height: 'auto',
 				width:"100%",
 				autowidth:true,
-				colNames:['ID','账户','用户名'],
+				colNames:['ID','账户','用户名','角色'],
 				colModel:[
 					{name:'id',index:'id', hidden:false,editable : false}, //width:60,
 					{name:'account',index:'account',editor:"text", editable : true},
-					{name:'name',index:'name',editor:"text", edittype:"select",editable : true,
+					{name:'name',index:'name',editor:"text", editable : true},
+					{name:'role',index:'role',editor:"text", formatter:"select",edittype:"select",editable : true,
 						editoptions: {
-							value: { '-1':'已取消',0:'作废', 1:'已提交', 2:'已确认', 3:'等待收货', 4:'已收货'},
+							value: getSelectNames(),
 							dataInit: function (elem) {
-								$(elem).width(160).select2();
-								$(elem).addClass("select2box");
+								$(elem).css({ width: "100%" }).addClass("FormElement ui-widget-content ui-corner-all").select2({
+									language: "zh-CN",
+									placeholder: {
+										id: '-1', // the value of the option
+										text: '请选择一个选项'
+									},
+									allowClear: true,
+									// theme: "classic",
+								});
 							}
 						}
 					}
@@ -209,7 +152,40 @@
 				{} // search
 			);
 		});
-
+	function getSelectNames() {
+		let data = "";
+		$.ajax({
+			cache: true,
+			type: "get",
+			timeout: 2000,
+			url: "/roles/list",
+			data: {},
+			async: false,
+			headers: { // 叠加式添加
+				Accept: "application/json; charset=utf-8",
+				accessToken: "abcd"
+			},
+			beforeSend: function (xhr) {
+				// xhr.setRequestHeader('accessToken', 'test-value'); // 叠加式添加
+			},
+			error: function (xhr, statusText, errorThrown) { // XMLHttpRequest
+				// alert("错误提示： status:" + xhr.status + " responseText:" + xhr.responseText);
+				if (xhr.status != 200) {
+					alert("错误提示： status:" + xhr.status + " responseText:" + statusText);
+				}
+			},
+			success: function (result, statusText, xhr) {
+				for (let i = 0; i < result.length; i++) {
+					if(i != result.length - 1) {
+						data += result[i].id + ":" + result[i].name + ";";
+					}else {
+						data += result[i].id + ":" + result[i].name;
+					}
+				}
+			}
+		});
+		return data;
+	}
 	function PassFormat(cellValue,options,rowObject){
 		return "<input type='password' readonly='true'onclick='SelectFun(" + rowObject.id + ")' style='border:none;color:#fa6; background-color:transparent;width:100%;' value='" + cellValue +"'/>";
 	}
