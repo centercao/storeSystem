@@ -18,7 +18,7 @@ router.prefix('/users');
 // 返回用户页面
 router.get('/',  async function (ctx, next) {
 	await ctx.render('users', {
-		title:"账户管理",theme:"blitzer"
+		title:"账户管理",theme:"ui-darkness"
 	});
 });
 // 获得信息
