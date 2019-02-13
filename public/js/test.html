@@ -1,0 +1,139 @@
+<html>
+  <head>
+    <meta name="generator"
+    content="HTML Tidy for HTML5 (experimental) for Windows https://github.com/w3c/tidy-html5/tree/c63cc39" />
+    <title>实时查询城市通过姓名或拼音简写</title>
+    <meta charset="utf-8" />
+    <script type="text/javascript" src="jquery-3.3.1.min.js"></script>
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/css/select2.min.css" rel="stylesheet" />
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/js/select2.min.js"></script>
+  </head>
+  <body>
+    <form>
+      <input id="searchCityName" style="width: 100%;" type="text" placeholder="中文 / 拼音首字母" />
+    </form>
+    <ul>
+      <li pinyin="bj" cityname="北京">
+        <a href="/cityBranch/12.html">北京</a>
+      </li>
+      <li pinyin="dl" cityname="大连">
+        <a href="/cityBranch/14.html">大连</a>
+      </li>
+      <li pinyin="sh" cityname="上海">
+        <a href="/cityBranch/13.html">上海</a>
+      </li>
+      <li pinyin="jn" cityname="济南">
+        <a href="/cityBranch/15.html">济南</a>
+      </li>
+      <li pinyin="gz" cityname="广州">
+        <a href="/cityBranch/17.html">广州</a>
+      </li>
+      <li pinyin="jh" cityname="金华">
+        <a href="/cityBranch/18.html">金华</a>
+      </li>
+      <li pinyin="wh" cityname="武汉">
+        <a href="/cityBranch/19.html">武汉</a>
+      </li>
+      <li pinyin="nj" cityname="南京">
+        <a href="/cityBranch/20.html">南京</a>
+      </li>
+      <li pinyin="sz" cityname="深圳">
+        <a href="/cityBranch/22.html">深圳</a>
+      </li>
+      <li pinyin="tj" cityname="天津">
+        <a href="/cityBranch/21.html">天津</a>
+      </li>
+      <li pinyin="cd" cityname="成都">
+        <a href="/cityBranch/24.html">成都</a>
+      </li>
+      <li pinyin="ly" cityname="临沂">
+        <a href="/cityBranch/25.html">临沂</a>
+      </li>
+      <li pinyin="cc" cityname="长春">
+        <a href="/cityBranch/26.html">长春</a>
+      </li>
+      <li pinyin="hz" cityname="杭州">
+        <a href="/cityBranch/27.html">杭州</a>
+      </li>
+      <li pinyin="nb" cityname="宁波">
+        <a href="/cityBranch/28.html">宁波</a>
+      </li>
+      <li pinyin="qd" cityname="青岛">
+        <a href="/cityBranch/29.html">青岛</a>
+      </li>
+      <li pinyin="sy" cityname="沈阳">
+        <a href="/cityBranch/33.html">沈阳</a>
+      </li>
+    </ul>
+	<div>
+            <select class="singleSelect" style="width: 200px;">
+                <option value="">--请选择--</option>
+                <option value="">阿里|al</option>
+                <option value="">阿姨|ay</option>
+                <option value="">江南|jn</option>
+                <option value="">杭州|hz</option>
+                <option value="">无锡|wx</option>
+                <option value="">上海|sh</option>
+            </select>
+
+        </div>
+	<div>
+<select name="test" id="test">
+    <option value="1">王者荣耀|wangzherongyao|wzry</option>
+    <option value="2">部落冲突|buluochongtu|blct</option>
+    <option value="3">枪战王者|qiangzhanwangzhe|qzwz</option>
+    <option value="4">永恒纪元|yonghengjiyuan|yhjy</option>
+    <option value="5">英魂之刃|yinghunzhiren|yhzr</option>
+    <option value="6">皇室战争|huangshizhanzheng|hszz</option>
+    <option value="7">一起来飞车|yiqilaifeiche|yqlfc</option>
+    <option value="8">海岛奇兵|haidaoqibing|hdqb</option>
+    <option value="9">阴阳师|yinyangshi|yys</option>
+    <option value="10">热血江湖|rexuejianghu|rxjh</option>
+</select>
+</div>
+<script type="text/javascript">
+
+        $(document).ready(function() {
+                $('.singleSelect').select2();
+				function searchCity() {
+		var searchCityName = $("#searchCityName").val();    
+		if (searchCityName == "") {
+		  $("ul li").show();
+		} else {
+		  $("ul li").each(function() {
+				var pinyin = $(this).attr("pinyin");            
+				var cityName = $(this).attr("cityName");            
+				if (pinyin.indexOf(searchCityName) != -1
+					|| cityName.indexOf(searchCityName) != -1) {
+				  $(this).show();
+				} else {
+				  $(this).hide();
+				}
+			  });
+		}
+	  }
+	  $('#searchCityName').bind('input propertychange', function() {
+		searchCity();
+	  }); 
+	  
+	  $('#test').select2({
+        width:150,
+        allowClear: true,
+        formatResult: function (item) {
+            var str = item.text;
+            var idx = str.indexOf('|');
+            return str.substring(0,idx);
+        },
+        formatSelection: function (item) {
+            var str = item.text;
+            var idx = str.indexOf('|');
+            return str.substring(0,idx);
+        },
+        placeholder: '--请选择--'
+    });
+
+            });
+
+</script>
+  </body>
+</html>
