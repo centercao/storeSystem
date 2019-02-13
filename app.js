@@ -156,19 +156,21 @@ app.use(async (ctx, next) => {
 	}
 });
 // 登录检查
-const allowpage = ['/login','/api/login'];
+const allowPage = [/^\/login/,/^\/users\/\S+\/password/];
 //拦截
 app.use(async (ctx, next) => {
 	let url = ctx.originalUrl;
-	if (allowpage.indexOf(url) > -1) {
-		// 可直接访问
-	} else {
-		if (!ctx.session.user) {
-			console.log('login status validate fail')
-			console.log(ctx.request.url);
-			ctx.redirect('/login');
+	for(let i =0,len = allowPage.length;i<len;i++){
+		if(allowPage[i].test(url)){
+			await next();
 			return;
 		}
+	}
+	if (!ctx.session.user || !ctx.session.user.account) {
+		console.log('login status validate fail')
+		console.log(ctx.request.url);
+		ctx.redirect('/login');
+		return;
 	}
 	await next();
 });

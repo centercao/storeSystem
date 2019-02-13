@@ -7,9 +7,10 @@ const getUserIp = (req) => {
       req.connection.socket.remoteAddress;
 };
 router.get('/', async (ctx, next) => {
-  let ip = getUserIp(ctx.req);
+  // let ip = getUserIp(ctx.req);
   await ctx.render('index', {
-    title: 'Hello Koa 2!'
+    title: '账务邦服务系统',theme:ctx.session.user.theme,
+    userName:ctx.session.user.name,userImage:ctx.session.user.image
   });
 });
 

@@ -1,11 +1,217 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title><%= title %></title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
-  </head>
-  <body>
-    <h1><%= title %></h1>
-    <p>EJS Welcome to <%= title %></p>
-  </body>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<link rel="stylesheet" href="font-awesome/font-awesome-4.7.0/css/font-awesome.min.css">
+	<link rel="stylesheet" href="themes/<%= theme %>/jquery-ui.min.css">
+	<link rel="stylesheet" href="jqLayout/css/jqLayout.css">
+	<link rel="stylesheet" href="jQuery-contextMenu/2.8.0/jquery.contextMenu.css">
+	<link rel="stylesheet" href="css/index.css">
+
+	<script type="text/javascript" src="js/jquery-3.3.1.min.js"></script>
+	<script type="text/javascript" src="js/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="jqLayout/js/jqLayout.js"></script>
+	<script type="text/javascript" src="jQuery-contextMenu/2.8.0/jquery.contextMenu.js"></script>
+	<script type="text/javascript" src="jQuery-contextMenu/2.8.0/jquery.ui.position.min.js"></script>
+	<script type="text/javascript" src="js/index.js"></script>
+	<title><%= title %></title>
+	<style type="text/css">
+
+	</style>
+</head>
+<body class="jqLayout">
+<!--ui-widget-header-->
+<div class="ui-jqLayout-north">
+	<div class="logoPanel">
+		<img class="logImage" src="images/top_logo.png">
+	</div>
+	<div class="system">账务邦服务系统</div>
+	<div class="notice" title="查看通知">
+		<span class="fa fa-bell-o"></span>
+		<span class="noticeLabel">3</span>
+	</div>
+	<div class="userImage">
+		<img class="user-image" src="<%= userImage %>">
+	</div>
+	<div class="userName"><%= userName %></div>
+</div>
+<div class="ui-jqLayout-south" style="text-align:center;line-height: 30px;">@2019 账务邦 服务电话:15052221631</div>
+<div class="ui-jqLayout-west">
+	<div id="accordion" class="treeViewer">
+	</div>
+</div>
+<div class="ui-jqLayout-east">east</div>
+<div class="ui-jqLayout-center">
+	<div class="tabsViewer" id="tabs">
+		<ul class="tabList">
+		</ul>
+	</div>
+</div>
+<script type="text/javascript">
+	let tabs;
+	function addTab(id,name,url) {
+		let tabList = $('#tabs .tabList > li[data-id="'+ id+ '"]');
+		if(tabList.length > 0){
+			tabs.tabs({ active: tabList.index() });
+			return;
+		}
+		let li = $('<li data-id="' + id + '"><a href="#tabs-'+ id + '">' + name +
+				'</a> <span class="ui-icon ui-icon-close" role="presentation">移除标签页</span></li>');
+		tabs.find( ".tabList.ui-tabs-nav" ).append( li );
+		tabs.append( '<div class="tabContent" id="tabs-' +
+				id + '"><iframe class="LRADMS_iframe" scrolling = "auto" width="100%" height="100%" ' +
+				'src="'+ url +'" frameborder="0" seamless" ></iframe></div>');
+		tabs.tabs( "refresh" );
+		tabs.tabs({ active: -1 });
+	}
+	$(document).ready(function () {
+		$(document).tooltip({show: {effect: "blind", duration: 300, delay: 1000}});
+		$('body').jqLayout();
+		$(".userName").button({
+			icons: {
+				secondary: "ui-icon-triangle-1-s"
+			}
+		});
+		$.contextMenu({
+			selector: '.userImage,.userName',
+			trigger: 'left',
+			items: {
+				"personInfo": {
+					name: "个人信息", icon: "fa-user", callback: function (itemKey, opt, e) {
+
+					}
+				},
+				"themes": {
+					name: "皮肤设置", icon: "fa-paint-brush", items: {
+						"default": {
+							name: "默认", icon: "fa-user", callback: function (itemKey, opt, e) {
+							}
+						},
+						"blue": {
+							name: "蓝色海洋", icon: "fa-user", callback: function (itemKey, opt, e) {
+							}
+
+						},
+						"darkness": {
+							name: "经典酷黑", icon: "fa-user", callback: function (itemKey, opt, e) {
+							}
+
+						}
+					}
+				},
+				"logout": {
+					name: "安全退出", icon: "fa-power-off", callback: function (itemKey, opt, e) {
+						$.ajax({
+							cache: true,
+							type: "delete",
+							timeout: 2000,
+							url: "/login",
+							data: {},
+							async: false, // 异步
+							error: function (xhr, statusText, errorThrown) { // XMLHttpRequest
+								// alert("错误提示： status:" + xhr.status + " responseText:" + xhr.responseText);
+							},
+							success: function (result, statusText, xhr) {
+								window.location.href = '/login';
+							}
+						});
+					}
+				}
+			}
+		});
+		// 通知区
+		$('.notice').on('click', function () {
+			$('body').jqLayout("togglePanel","east");
+		});
+		// 添加 tab
+
+		tabs = $( "#tabs" ).tabs({hide: { effect: "blind", duration: 800 },show: { effect: "blind", duration: 800 }});
+		tabs.find( ".ui-tabs-nav" ).sortable({
+			axis: "x",
+			stop: function() {
+				tabs.tabs( "refresh" );}
+		});
+		$(".tabList li").each(function () {
+			// alert($(this).find('a').attr('href'));
+		});
+		tabs.on( "click","span.ui-icon-close", function() {
+			var panelId = $( this ).closest( "li" ).remove().attr( "aria-controls" );
+			$( "#" + panelId ).remove();
+			tabs.tabs( "refresh" );
+		});
+		// 获得子菜单
+		function getChildrenData(data, action) {
+			if (action == null) return;
+			let reveal = new Array();
+			$(data).each(function (i, v) {
+				if (action(v)) {
+					reveal.push(v);
+				}
+			});
+			return reveal;
+		}
+		function addTree(data) {
+			let $tree = '';
+			$.each(data, function (i) {
+				let row = data[i];
+				if (row.pId == "0") {
+					$tree += '<h3 class="treeTitle">'+ row.name+ '</h3><ul class="menu">';
+					let childNodes = getChildrenData(data, function (v) { return v.pId == row.id });
+					$.each(childNodes,function (j) {
+						let nodeRow = childNodes[j] ;
+						$tree += '<li data-id="' + nodeRow.id + '" data-url="'+ nodeRow.url +
+								'"><a href="#"><span class="'+ (nodeRow.icon||'ui-icon ui-icon-disk' )+ '"></span>' + nodeRow.name + '</a></li>';
+					});
+					$tree += "</ul>";
+				}
+			});
+			return $tree;
+		}
+		// 获取权限
+		$.ajax({
+			cache: true,
+			type: "get",
+			timeout: 2000,
+			url: "/rights/abc",
+			data: {},
+			async: false, // 同步
+			beforeSend: function (xhr) {
+				// xhr.setRequestHeader('accessToken', 'test-value'); // 叠加式添加
+			},
+			error: function (xhr, statusText, errorThrown) { // XMLHttpRequest
+				// alert("错误提示： status:" + xhr.status + " responseText:" + xhr.responseText);
+			},
+			success: function (result, statusText, xhr) {
+				$('#accordion').append(addTree(result));
+			}
+		});
+
+		$( ".treeViewer .menu" ).menu();
+		$( "#accordion" ).accordion({
+			heightStyle: "fill", // content
+			header: "> h3",
+			collapsible: true,
+			icons:{
+				header: "ui-icon-circle-arrow-e",
+				activeHeader: "ui-icon-circle-arrow-s"
+			}
+		})
+				.sortable({
+					axis: "y",
+					handle: "h3",
+					stop: function( event, ui ) {
+						// 当排序时，IE 不能注册 blur，所以触发 focusout 处理程序来移除 .ui-state-focus
+						ui.item.children( "h3" ).triggerHandler( "focusout" );
+					}
+				});
+		$( "#accordion.treeViewer" ).on('click','ul .ui-menu-item',function () {
+			let id = $(this).data('id');
+			let url = $(this).data('url');
+			let name = $(this).find('a').text();
+			addTab(id,name,url);
+		});
+	}); // ready
+</script>
+</body>
 </html>
