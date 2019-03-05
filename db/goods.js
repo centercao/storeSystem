@@ -1,12 +1,12 @@
 db.getCollection("goods").insert( {
-    _id: ObjectId("5c63d28f74a1fe2278553688"),
+    _id: "jsjmomwbKcOXzm1",
     name: "骆驼电池",
     pId: "15052221631",
-    remarks: "型号A"
+    remarks: "A"
 } );
 db.getCollection("goods").insert( {
-    _id: ObjectId("5c63d2b974a1fe2278553689"),
+    _id: "jsjmp3zkpcIBcpc",
     name: "马牌轮胎",
     pId: "15052221631",
-    remarks: "型号B"
+    remarks: ""
 } );

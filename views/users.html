@@ -2,20 +2,25 @@
 <html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<link rel="stylesheet" type="text/css" href="jqgrid/css/ui.jqgrid.min.css" />
+	<link rel="stylesheet" type="text/css" href="jqGrid/css/ui.jqgrid.css" />
 	<link rel="stylesheet" href="select2/css/select2.css" />
 	<link rel="stylesheet" type="text/css"  href="themes/<%= theme %>/jquery-ui.min.css" />
 	<script type="text/javascript" src="js/jquery-3.3.1.min.js"></script>
-	<script type="text/javascript" src="jqGrid/js/grid.locale-cn.min.js"></script>
-	<script type="text/javascript" src="jqGrid/js/jquery.jqGrid.min.js"></script>
+	<script type="text/javascript" src="jqGrid/js/grid.locale-cn.js"></script>
+	<script type="text/javascript" src="jqGrid/js/jquery.jqGrid.js"></script>
 	<script type="text/javascript" src="js/jquery-ui.min.js"></script>
 	<script type="text/javascript" src="select2/js/pinyin.min.js" ></script>
 	<script type="text/javascript" src="select2/js/select2.full.js" ></script>
 	<script type="text/javascript" src="select2/js/zh-CN.js" ></script>
+	<script type="text/javascript" src="js/index.js"></script>
 	<style type="text/css">
 		* {
 			margin: 0;
 			padding: 0;
+			font-size: small;
+		}
+		.ui-jqgrid-caption{
+			display: none;
 		}
 	</style>
 </head>
@@ -23,25 +28,10 @@
 <table id="list"></table>
 <div id="pager"></div>
 <script type="text/javascript">
-	function pageSize() {
-		let winW, winH;
-		if(window.innerHeight) {// all except IE
-			winW = window.innerWidth;
-			winH = window.innerHeight;
-		} else if (document.documentElement && document.documentElement.clientHeight) {// IE 6 Strict Mode
-			winW = document.documentElement.clientWidth;
-			winH = document.documentElement.clientHeight;
-		} else if (document.body) { // other
-			winW = document.body.clientWidth;
-			winH = document.body.clientHeight;
-		}  // for small pages with total size less then the viewport
-		return {WinW:winW, WinH:winH};
-	}
 	$(function(){
 		$(window).resize(function(){
 			$(window).unbind("onresize");
-			var winWh = pageSize();
-			$("#list").jqGrid('setGridWidth', winWh.WinW);//.jqGrid('setGridHeight', winWh.WinH-86);
+			$("#list").jqGrid('setGridWidth', $(window).width()-8);//.jqGrid('setGridHeight', winWh.WinH-86);
 			$(window).bind("onresize", this);
 		});
 	});
@@ -51,7 +41,7 @@
 			// $.fn.select2.defaults.set("theme", "<%= theme %>");
 			jQuery("#list").jqGrid({
 				hidegrid: false,
-				url:'/users/list', //
+				url:'/users/management', //
 				datatype: "json",
 				/*dataType:'local',*/
 				mtype : "GET",
@@ -61,14 +51,12 @@
 				height: 'auto',
 				width:"100%",
 				autowidth:true,
-				colNames:['ID','账户','用户名','店铺','操作'],
 				colModel:[
-					{name:'_id',index:'_id', hidden:true,editable : false}, //width:60,
-					{name:'account',index:'account',editor:"text", editable : true},
-					{name:'name',index:'name',editor:"text", editable : true},
-					{name:'shop',index:'shop',editor:"text", formatter:"select",edittype:"select",editable : true,
+					{label:'账户', name:'_id',index:'_id', hidden:false,editable : true}, //width:60,
+					{label:'姓名',name:'name',index:'name',editor:"text", editable : true},
+					{label:'店铺',name:'shop',index:'shop',editor:"text", formatter:"select",edittype:"select",editable : true,
 						editoptions: {
-							value: getSelectNames(),
+							value: getShopNames(),
 							dataInit: function (elem) {
 								$(elem).css({ width: "100%" }).select2({
 									language: "zh-CN",
@@ -82,8 +70,8 @@
 							}
 						}
 					},
-					{name : 'act',index : 'act',width : 80,editable : false,sortable : false,formatter: function (cellvalue, options, rowObject ) {
-						return '<a href="javascript:void(0);" style="color:#0f0;float:left;" onclick=SettingPermissions("'+ rowObject.account + '","' + rowObject.name + '");>设置权限</a>';;
+					{label:'操作',name : 'act',index : 'act',width : 80,editable : false,sortable : false,formatter: function (cellvalue, options, rowObject ) {
+						return '<a href="javascript:void(0);" style="color:#0f0;float:left;" onclick=SettingPermissions("'+ options.rowId + '","' + rowObject.name + '");>设置权限</a>';;
 					}}
 				],
 				sortname:'_id',
@@ -103,12 +91,11 @@
 					repeatitems: false
 				},
 				loadComplete:function(xhr){
-					$(".ui-jqgrid .ui-jqgrid-titlebar").hide();
 				}
 			});
 			jQuery("#list").jqGrid('navGrid','#pager',{add:true,edit:true,del:true,search:false,refresh:false},
 				{ // edit
-					checkOnSubmit:false, closeAfterEdit: true,height:280,reloadAfterSubmit:false,modal: true,
+					checkOnSubmit:false, closeAfterEdit: true,reloadAfterSubmit:false,modal: true,
 					url:"/users",
 					mtype:"put",
 					beforeShowForm : function(form) {
@@ -126,7 +113,7 @@
 					}
 				},
 				{ // add
-					checkOnSubmit:false, closeAfterAdd: true,height:280,reloadAfterSubmit:false,modal: true,jqModal: true,addedrow:'last',
+					checkOnSubmit:false, closeAfterAdd: true,reloadAfterSubmit:false,modal: true,jqModal: true,addedrow:'last',
 					url:"/users",
 					mtype:"post",
 					onclickSubmit: function(params, postData) {
@@ -165,92 +152,20 @@
 		$(window.parent.addTab(id,"权限-" + name,"rights?id=" + id));
 		return false;
 	}
-	function getSelectNames() {
+	function getShopNames() {
 		let data = "";
-		$.ajax({
-			cache: true,
-			type: "get",
-			timeout: 2000,
-			url: "/shops/list",
-			data: {},
-			async: false,
-			headers: { // 叠加式添加
-				Accept: "application/json; charset=utf-8",
-				accessToken: "abcd"
-			},
-			beforeSend: function (xhr) {
-				// xhr.setRequestHeader('accessToken', 'test-value'); // 叠加式添加
-			},
-			error: function (xhr, statusText, errorThrown) { // XMLHttpRequest
-				// alert("错误提示： status:" + xhr.status + " responseText:" + xhr.responseText);
-				if (xhr.status != 200) {
-					alert("错误提示： status:" + xhr.status + " responseText:" + statusText);
-				}
-			},
-			success: function (result, statusText, xhr) {
-				for (let i = 0; i < result.length; i++) {
-					if(i != result.length - 1) {
-						data += result[i]._id + ":" + result[i].name + ";";
+		runAjax('get','/shops/list',{},function (err,result) {
+			if(!err){
+				for (let i = 0; i < result.rows.length; i++) {
+					if(i != result.rows.length - 1) {
+						data += result.rows[i]._id + ":" + result.rows[i].name + ";";
 					}else {
-						data += result[i]._id + ":" + result[i].name;
+						data += result.rows[i]._id + ":" + result.rows[i].name;
 					}
 				}
 			}
 		});
 		return data;
-	}
-	function PassFormat(cellValue,options,rowObject){
-		return "<input type='password' readonly='true'onclick='SelectFun(" + rowObject.id + ")' style='border:none;color:#fa6; background-color:transparent;width:100%;' value='" + cellValue +"'/>";
-	}
-	function PassUnFormat(cellValue,options,cell){
-		return $('input',cell).val();
-	}
-	function roleFormat(cellValue,options,rowObject){
-		var res = '';
-		let id =  'abcd';
-		for(var i = 0,len=userRole.length; i < len; i++) {
-			if(cellValue && cellValue.indexOf(userRole[i].id) != -1){
-				res +='<input type="checkbox" style="height:14px; vertical-align:middle;" onclick="checkboxOnclick(this)" checked  name="' + rowObject.id + '" value="' + userRole[i].id +'" /> <span>' + userRole[i].name +'</span>';
-			}else {
-				res +='<input type="checkbox" style="height:14px; vertical-align:middle;" onclick="checkboxOnclick(this)" name="' + rowObject.id + '" value="' + userRole[i].id +'" /> <span>' + userRole[i].name +'</span>';
-			}
-		}
-		return res;
-	}
-	function roleUnFormat(cellValue,options,cell){
-		return $('input',cell).val();
-	}
-	function SelectFun(id){
-		jQuery("#list").jqGrid('setSelection',id);
-	}
-
-	//点击是否启用选择框
-	function checkboxOnclick(checkbox){
-		// checkbox.checked = true;
-		$.ajax({
-			cache: true,
-			type: "put",
-			timeout:2000,
-			url: "/users/" + checkbox.name + "/role",
-			data:{checked:checkbox.checked?1:0,val:checkbox.value},
-			async: true,
-			headers: { // 叠加式添加
-				Accept: "application/json; charset=utf-8",
-				accessToken:"abcd"
-			},
-			beforeSend: function(xhr){
-				// xhr.setRequestHeader('accessToken', 'test-value'); // 叠加式添加
-			},
-			error: function(xhr, statusText, errorThrown) { // XMLHttpRequest
-				// alert("错误提示： status:" + xhr.status + " responseText:" + xhr.responseText);
-				if(xhr.status != 200){
-					alert("错误提示： status:" + xhr.status + " responseText:" + statusText);
-				}
-			},
-			success: function(result,statusText,xhr) {
-				userRole = result;
-			}
-		});
 	}
 </script>
 </body>

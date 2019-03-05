@@ -7,12 +7,7 @@ const server = require('koa-static');
 const views = require('koa-views'); // views
 const session = require('koa-session');
 const http = require('http');
-// const json = require('koa-json');
-// const onerror = require('koa-onerror');
-// local
 const LogFile = require('./middlewares/logHelper');
-/*const Redis = require("./middlewares/redisHelper");
-const redis =new Redis("127.0.0.1",6379,"root@2017@2018");*/
 const apiError = require("./middlewares/apiError");
 const FormatOutput = require("./middlewares/formatOutput");
 const accessToken = require("./middlewares/accessToken");
@@ -26,29 +21,8 @@ const mongodb = new Mongodb({
 	max: 100,
 	min: 1,
 });
-
 const app = new Koa();
-//配置session的中间件
-// app.keys = ['some secret hurr'];   /*cookie的签名*/
-// const CONFIG = {
-// 	key: 'koa:sess', /** 默认 */
-// 	maxAge: 10000,  /*  cookie的过期时间        【需要修改】  */
-// 	overwrite: true, /** (boolean) can overwrite or not (default true)    没有效果，默认 */
-// 	httpOnly: true, /**  true表示只有服务器端可以获取cookie */
-// 	signed: true, /** 默认 签名 */
-// 	rolling: true, /** 在每次请求时强行设置 cookie，这将重置 cookie 过期时间（默认：false） 【需要修改】 */
-// 	renew: false, /** (boolean) renew session when session is nearly expired      【需要修改】*/
-// };
-// app.use(session(CONFIG, app));
 app.keys = ['this is my secret'];//我理解为一个加密的钥匙，类似一个token
-
-app.use(session({
-	key: 'koa:sess', /** cookie的名称，可以不管 */
-	maxAge: 7200000, /** (number) maxAge in ms (default is 1 days)，cookie的过期时间，这里表示2个小时 */
-	overwrite: true, /** (boolean) can overwrite or not (default true) */
-	httpOnly: true, /** (boolean) httpOnly or not (default true) */
-	signed: true, /** (boolean) signed or not (default true) */
-},app));
 const formatOutput = new FormatOutput();
 const logger = new LogFile({
 	appenders: {file: {filename: __dirname + "/logs/api.log", maxLogSize: 2048000}},
@@ -84,12 +58,18 @@ app.context.mongodb = mongodb;
 
 // middlewares
 
+app.use(session({
+	key: 'koa:sess-store', /** cookie的名称，可以不管 */
+	maxAge: 7200000, /** 86400000 cookie的过期时间 maxAge in ms (default is 1 days) */
+	overwrite: true, /** (boolean) can overwrite or not (default true) */
+	httpOnly: true, /** cookie是否只有服务器端可以访问 httpOnly or not (default true) */
+	signed: true, /** 签名默认true */
+	rolling: true, /** 在每次请求时强行设置cookie，这将重置cookie过期时间（默认：false）**/
+	renew: true  //(boolean) renew session when session is nearly expired,
+},app));
 app.use(cors()); // 跨域
-
-// app.use(json());
 // static file dir
 app.use(server(__dirname + '/public'));
-
 app.use(views(__dirname + '/views', {
 	map: {html: 'ejs'}
 }));
@@ -143,9 +123,6 @@ app.use(async (ctx, next) => {
 app.use(async (ctx, next) => {
 	try {
 		await next();
-		/*if (ctx.status != 200) {// system http code
-			ctx.throw(ctx.status, ctx.message);
-		}*/
 	} catch (error) {
 		ctx.body = {
 			message:error.message,
@@ -160,6 +137,7 @@ const allowPage = [/^\/login/,/^\/users\/\S+\/password/];
 //拦截
 app.use(async (ctx, next) => {
 	let url = ctx.originalUrl;
+	// let method = ctx.req.method;
 	for(let i =0,len = allowPage.length;i<len;i++){
 		if(allowPage[i].test(url)){
 			await next();
@@ -196,7 +174,7 @@ route.init(app);
 
 // 404 url error
 app.use(async (ctx, next) => {
-	ctx.throw(404, ctx.message,{details:{uri:ctx.request.originalUrl}});
+	ctx.throw(404, ctx.message,{details:{url:ctx.request.originalUrl}});
 	// await ctx.render('common/404')
 });
 // error-handling log catch error

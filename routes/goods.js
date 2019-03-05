@@ -22,26 +22,27 @@ router.get('/',  async function (ctx, next) {
 	});
 });
 // 获得信息
-router.get('/:id',  async function (ctx, next) {
+router.get('/list',  async function (ctx, next) {
 	// let query = ctx.request.query;
 	let  where={pId:ctx.session.user.account};
-	let projection={pass:0,right:0};
+	let projection={};
 	let res = await ctx.mongodb.db.collection('goods').find(where).project(projection).toArray();
 	ctx.body = {rows:res};
 });
 // 添加
 router.post('/',async function (ctx, next) {
 	let body = ctx.request.body;
+	let data ={
+		_id:body._id,
+		pId:ctx.session.user.pId,
+		name:body.name,
+		warn:Number(body.warn),
+		remarks:body.remarks
+	};
 	// 验证参数
-	ctx.assert(ctx.session.user.account, 400, "参数错误!",{details:{ pId: "undefined"}});
-	ctx.assert(body.name, 400, "参数错误!",{details:{ name: "undefined"}});
-	// if(ctx.session.user.right.indexOf(0)==-1){
-	// 	ctx.assert(body.shop, 400, "参数错误!",{details:{ shop: "undefined"}});
-	// }
-	let res = await ctx.mongodb.db.collection('goods').insertOne({remarks:body.remarks,name:body.name,
-		pId: ctx.session.user.pId});
+	let res = await ctx.mongodb.db.collection('goods').insertOne(data);
 	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
-	ctx.body = {id:res.insertedId.toString()};
+	ctx.body = {id:res.insertedId};
 });
 router.put('/', async function (ctx, next) {
 	ctx.body = {};
@@ -50,17 +51,20 @@ router.put('/', async function (ctx, next) {
 router.put('/:id', async function (ctx, next) {
 	let body = ctx.request.body;
 	// 验证参数
-	ctx.assert(body.name, 400, "参数错误!",{details:{ name: "未定义"}});
 	let id = ctx.params.id;
-	let res = await ctx.mongodb.db.collection('goods').updateOne({_id:ctx.mongodb.ObjectID(id)},
-		{$set:{name:body.name,remarks:body.remarks}});
+	let data ={
+		name:body.name,
+		warn:Number(body.warn),
+		remarks:body.remarks
+	};
+	let res = await ctx.mongodb.db.collection('goods').updateOne({_id:id},{$set:data});
 	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
-	ctx.body = res.result;
+	ctx.body = res.result.nModified;
 });
 // 删除
 router.delete('/:id',async function (ctx, next) {
 	let id = ctx.params.id;
-	let res = await ctx.mongodb.db.collection('goods').deleteOne({_id:ctx.mongodb.ObjectID(id)});
+	let res = await ctx.mongodb.db.collection('goods').deleteOne({_id:id});
 	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
 	ctx.body = res.result;
 });

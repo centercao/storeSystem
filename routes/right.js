@@ -47,17 +47,17 @@ router.get('/list/:id',  async function (ctx, next) {
 	// let query = ctx.request.query;
 	let  where={pId:{ $ne : 0 } ,$or:[]};
 	if(ctx.session.user.right.indexOf(0)!=-1){
-		where={ pId : { $ne : 0 } };
+		where={pId : { $ne : 0 } };
 	}else{
 		ctx.session.user.right.forEach(function(v,i,a){
 			var val ={id:v};
 			where.$or.push(val);
 		});
 	}
-	let projection={};
+	let projection={_id:0,id:1,name:1};
 	let res = await ctx.mongodb.db.collection('rights').find(where).project(projection).toArray();
 	let id = ctx.params.id;
-	where = {account:id};
+	where = {_id:id};
 	projection = {right:1};
 	let rights = await ctx.mongodb.db.collection('users').find(where).project(projection).toArray();
 	res.forEach(function(v,i,a){
@@ -89,16 +89,15 @@ router.put('/:id', async function (ctx, next) {
 	let body = ctx.request.body;
 	// 验证参数
 	ctx.assert(body.id, 400, "Parameter error!",{details:{ id: "undefined"}});
-	let account = ctx.params.id;
+	let id = ctx.params.id;
 	let res; // ctx.mongodb.ObjectID(id)
 	if(body.check == "1"){
-		res = await ctx.mongodb.db.collection('users').updateOne({account:account},{ $push: { right:Number(body.id)}});
+		res = await ctx.mongodb.db.collection('users').updateOne({_id:id},{ $push: { right:Number(body.id)}});
 	}else {
-		res = await ctx.mongodb.db.collection('users').updateOne({account:account},{ $pull: { right:Number(body.id)}});
+		res = await ctx.mongodb.db.collection('users').updateOne({_id:id},{ $pull: { right:Number(body.id)}});
 	}
 	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
-	// ctx.throw(503, "服务器无法处理当前请求",{details:{ result: res.result}});
-	ctx.body = res.result;
+	ctx.body = res.result.nModified;
 });
 // 修改角色
 router.put('/:id/role', async function (ctx, next) {

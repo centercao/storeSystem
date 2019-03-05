@@ -22,11 +22,19 @@ router.get('/',  async function (ctx, next) {
 	});
 });
 // 获得信息
-router.get('/:id',  async function (ctx, next) {
+router.get('/management',  async function (ctx, next) {
 	// let query = ctx.request.query;
-	let  where={pId:ctx.session.user.account};
-	let projection={pass:0,right:0};
+	let  where={pId:ctx.session.user.pId};
+	let projection={name:1};
 	let res = await ctx.mongodb.db.collection('users').find(where).project(projection).toArray();
+	ctx.body = {rows:res};
+});
+router.get('/list',  async function (ctx, next) {
+	// let query = ctx.request.query;
+	let  where={pId:ctx.session.user.pId};
+	let projection={name:1};
+	let res = await ctx.mongodb.db.collection('users').find(where).project(projection).toArray();
+	res.push( {_id:ctx.session.user.account,name:ctx.session.user.name});
 	ctx.body = {rows:res};
 });
 // 添加用户
@@ -34,21 +42,21 @@ router.post('/',async function (ctx, next) {
 	let body = ctx.request.body;
 	// 验证参数
 	ctx.assert(ctx.session.user.account, 400, "参数错误!",{details:{ pId: "undefined"}});
-	ctx.assert(body.account, 400, "参数错误!",{details:{ account: "undefined"}});
+	ctx.assert(body._id, 400, "参数错误!",{details:{ account: "undefined"}});
 	ctx.assert(body.name, 400, "参数错误!",{details:{ name: "undefined"}});
 	if(ctx.session.user.right.indexOf(0)==-1){
 		ctx.assert(body.shop, 400, "参数错误!",{details:{ shop: "undefined"}});
 	}
 	// 验证 重复输入
-	let res = await ctx.mongodb.db.collection('users').find({account:body.account}).toArray();
+	let res = await ctx.mongodb.db.collection('users').find({_id:body._id}).toArray();
 	if(res.length  > 0){
 		ctx.throw(400, "参数错误!",{details:{ account: "用户帐号重复"}});
 	}
 	let pass = cryptoPassFunc('123456'); // md5.hex_md5("123456");
-	res = await ctx.mongodb.db.collection('users').insertOne({account: body.account,pass:pass,name:body.name,
+	res = await ctx.mongodb.db.collection('users').insertOne({_id: body._id,pass:pass,name:body.name,
 		shop: body.shop,pId: ctx.session.user.account});
 	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
-	ctx.body = {id:res.insertedId.toString()};
+	ctx.body = {id:res.insertedId};
 });
 router.put('/', async function (ctx, next) {
 	ctx.body = {};
@@ -60,9 +68,9 @@ router.put('/:id/name', async function (ctx, next) {
 	ctx.assert(body.name, 400, "参数错误!",{details:{ name: "undefined"}});
 	ctx.assert(body.shop, 400, "参数错误!",{details:{ shop: "undefined"}});
 	let id = ctx.params.id;
-	let res = await ctx.mongodb.db.collection('users').updateOne({_id:ctx.mongodb.ObjectID(id)},{$set:{name:body.name,shop:body.shop}});
+	let res = await ctx.mongodb.db.collection('users').updateOne({_id:id},{$set:{name:body.name,shop:body.shop}});
 	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
-	ctx.body = res.result;
+	ctx.body = res.result.ok;
 });
 // 修改密码
 router.put('/:id/password', async function (ctx, next) {
@@ -72,12 +80,12 @@ router.put('/:id/password', async function (ctx, next) {
 	ctx.assert(body.oldPass, 400, "参数错误!",{details:{ oldPass: "未填写"}});
 	ctx.assert(body.pass, 400, "参数错误!",{details:{ pass: "未填写"}});
 	let pass = cryptoPassFunc(body.oldPass);
-	let res = await ctx.mongodb.db.collection('users').find({account:id,pass:pass}).toArray();
+	let res = await ctx.mongodb.db.collection('users').find({_id:id,pass:pass}).toArray();
 	ctx.assert(res.length, 400, "参数错误!",{details:{account:body.account, pass: body.pass}});
 	pass = cryptoPassFunc(body.pass);
-	res = await ctx.mongodb.db.collection('users').updateOne({account:id},{$set:{pass:pass}});
+	res = await ctx.mongodb.db.collection('users').updateOne({_id:id},{$set:{pass:pass}});
 	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
-	ctx.body = res.result;
+	ctx.body = res.result.ok;
 });
 // 删除用户
 router.delete('/:id',async function (ctx, next) {

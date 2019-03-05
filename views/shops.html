@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<link rel="stylesheet" type="text/css" href="jqGrid/css/ui.jqgrid.css" />
+	<link rel="stylesheet" type="text/css" href="themes/<%= theme %>/jquery-ui.min.css" />
+	<script type="text/javascript" src="js/jquery-3.3.1.min.js"></script>
+	<script type="text/javascript" src="jqGrid/js/grid.locale-cn.js"></script>
+	<script type="text/javascript" src="jqGrid/js/jquery.jqGrid.js"></script>
+	<script type="text/javascript" src="js/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="js/index.js"></script>
+	<script type="text/javascript" src="js/jsNodeId.js"></script>
+	<style type="text/css">
+		* {
+			margin: 0;
+			padding: 0;
+			font-size: small;
+		}
+		.ui-jqgrid-caption{
+			display: none;
+		}
+	</style>
+</head>
+<body>
+<table id="list"></table>
+<div id="pager"></div>
+<script type="text/javascript">
+	$(function(){
+		$(window).resize(function(){
+			$(window).unbind("onresize");
+			var winWh = pageSize();
+			$("#list").jqGrid('setGridWidth', $(window).width()-8);//.jqGrid('setGridHeight', winWh.WinH-86);
+			$(window).bind("onresize", this);
+		});
+	});
+	// $.fn.select2.defaults.theme_default = "jquery-ui";
+	$(document).ready(
+		function() {
+			jQuery("#list").jqGrid({
+				url:'/shops/list', //
+				datatype: "json",
+				/*dataType:'local',*/
+				mtype : "GET",
+				shrinkToFit:true,
+				height: 'auto',
+				width:"100%",
+				autowidth:true,
+				colNames:['ID','pId','名称'],
+				colModel:[
+					{label:'ID',name:'_id',index:'_id', hidden:true,editable : false}, //width:60,
+					{label:'pId',name:'pId',index:'pId',editor:"text", editable : false,hidden:true},
+					{label:'名称',name:'name',index:'name',editor:"text", editable : true}
+				],
+				sortname:'_id',
+				sortorder:'asc',
+				viewrecords:true,
+				rowNum:10,
+				rowList:[10,20,30],
+				pager:"#pager",
+				caption: "<%= title %>",
+				multiselect: false,
+				jsonReader: {
+					id: "_id",
+					root : "rows",
+					page:"page",
+					total:"total",
+					records:"records",
+					repeatitems: false
+				},
+				loadComplete:function(xhr){
+				}
+			});
+			jQuery("#list").jqGrid('navGrid','#pager',{add:true,edit:true,del:true,search:false,refresh:false},
+				{ // edit
+					checkOnSubmit:false, closeAfterEdit: true,reloadAfterSubmit:false,modal: true,
+					url:"/shops",
+					mtype:"put",
+					beforeShowForm : function(form) {
+						form.find('#account').attr('readOnly',true);//把编辑框中的字段设置为只读的。
+					},
+					onclickSubmit: function(params, postData) {
+						params.url = "/shops/" + postData.list_id;
+						return [true,''];
+					},
+					beforeSubmit:function(postData, formid) {
+						return [true,''];
+					},
+					afterSubmit:function(response, postData){
+						return [true,''];
+					}
+				},
+				{ // add
+					checkOnSubmit:false, closeAfterAdd: true,reloadAfterSubmit:false,modal: true,jqModal: true,addedrow:'last',
+					url:"/shops",
+					mtype:"post",
+					onclickSubmit: function(params, postData) {
+						return [true,''];
+					},
+					beforeSubmit:function(postData, formid) {
+						postData._id = jsShortId.gen(15);
+						return [true,'']; //return [true, "", jqXhr.responseJSON.id];
+					},
+					afterSubmit:function(response, postData){
+						var result=response.responseJSON;
+						// postData.id = result.id;
+						return [true,"",result.id];
+					}
+				},
+				{ // del
+					checkOnSubmit:false, reloadAfterSubmit:false,modal: true,
+					url:"/shops",
+					mtype:"delete",
+					onclickSubmit: function(params, postData) {
+						params.url = "/shops/" + postData;
+						return [true,''];
+					},
+					afterSubmit:function(response, postData) {
+						return [true, ''];
+					}
+				},
+				{} // search
+			);
+		});
+</script>
+</body>
+</html>

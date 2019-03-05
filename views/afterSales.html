@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link type="text/css" href="jQuery-Timepicker-Addon/1.6.3/css/jquery-ui-timepicker-addon.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="select2/css/select2.css"/>
+    <link rel="stylesheet" href="jqGrid/css/ui.jqgrid.css"/>
+    <!--<link rel="stylesheet" href="jqGrid/css/ui.jqgrid-for-bootstrap4.css"/>-->
+    <link rel="stylesheet" type="text/css" href="themes/<%= theme %>/jquery-ui.min.css"/>
+
+    <script type="text/javascript" src="js/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="js/jquery-ui.js"></script>
+    <script type="text/javascript" src="jqGrid/js/grid.locale-cn.js"></script>
+    <script type="text/javascript" src="jqGrid/js/jquery.jqGrid.js"></script>
+    <script type="text/javascript" src="select2/js/pinyin.min.js"></script>
+    <script type="text/javascript" src="select2/js/select2.full.js"></script>
+    <script type="text/javascript" src="select2/js/zh-CN.js"></script>
+    <script type="text/javascript" src="jQuery-Timepicker-Addon/1.6.3/js/jquery-ui-timepicker-addon.js"></script>
+    <script type="text/javascript" src="jQuery-Timepicker-Addon/1.6.3/js/jquery-ui-timepicker-zh-CN.js"></script>
+    <script type="text/javascript" src="js/index.js"></script>
+    <script type="text/javascript" src="js/jsNodeId.js"></script>
+    <style type="text/css">
+        * {
+            margin: 0;
+            padding: 0;
+            font-size: small;
+        }
+        html,body{
+            //overflow-x:hidden;
+            -ms-overflow-style: scrollbar;
+            height: 100%;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body class="ui-widget-content">
+<div id="list_1" style="padding:5px;">
+    <table id="list"></table>
+    <div id="pager"></div>
+</div>
+<div id="dialog-message" style="display: none;" title="信息提示">
+    <p id="info"></p>
+</div>
+<script type="text/javascript">
+	$(window).resize(function () {
+		$(window).unbind("onresize");
+		$("#list").jqGrid('setGridWidth', $("#list_1").width());//.jqGrid('setGridHeight', winWh.WinH-86);
+		$(window).bind("onresize", this);
+	});
+	function getCustomersOptions() {
+		let data = {};
+		runAjax('get', '/customers/list', {}, function (err, result) {
+			if (!err) {
+				for (let i = 0; i < result.rows.length; i++) {
+					data[result.rows[i]._id ] = result.rows[i].name;
+				}
+			}
+		});
+		return data;
+	}
+	function getGoodsOptions() {
+		let data = "";
+		runAjax('get', '/goods/list', {}, function (err, result) {
+			if (!err) {
+				for (let i = 0; i < result.rows.length; i++) {
+					if (i != result.rows.length - 1) {
+						data += result.rows[i]._id + ":" + result.rows[i].name + ";";
+					} else {
+						data += result.rows[i]._id + ":" + result.rows[i].name;
+					}
+				}
+			}
+		});
+		return data;
+	}
+	function getShopNames() {
+		let data = "";
+		runAjax('get','/shops/list',{},function (err,result) {
+			if(!err){
+				for (let i = 0; i < result.rows.length; i++) {
+					if(i != result.rows.length - 1) {
+						data += result.rows[i]._id + ":" + result.rows[i].name + ";";
+					}else {
+						data += result.rows[i]._id + ":" + result.rows[i].name;
+					}
+				}
+			}
+		});
+		return data;
+	}
+	function getSupplierOptions() {
+		let data = "";
+		runAjax('get','/suppliers/list',{},function (err,result) {
+			if(!err){
+				for (let i = 0; i < result.rows.length; i++) {
+					if(i != result.rows.length - 1) {
+						data += result.rows[i]._id + ":" + result.rows[i].name + ";";
+					}else {
+						data += result.rows[i]._id + ":" + result.rows[i].name;
+					}
+				}
+			}
+		});
+		return data;
+	}
+	$(document).ready(function () {
+			$( "#dialog-message" ).dialog({
+			autoOpen: false,
+			modal: true,
+			buttons: {
+				'关闭': function() {
+					$( this ).dialog( "close" );
+				}
+			}
+		});
+		jQuery("#list").jqGrid({
+			url:'/afterSales/lists', //
+			datatype: "json",
+			mtype : "GET",
+			shrinkToFit:true,
+			height: 'auto',
+			width:"100%",
+            deepempty:true,
+			autowidth:true,
+			postData:{},
+			colModel:[
+				{label:'ID', name:'_id',index:'_id', hidden:true,editable : false}, //width:60
+				{label:'日期',name:'date',index:'date',editor:"datetime", editable : false,search:true,
+					formatter:function (cellvalue, options, rowObject) {
+						return (new Date(cellvalue)).format("yyyy-MM-dd hh:mm:ss");
+					},
+					editoptions: {
+						dataInit: function (elem) {
+							$(elem).datetimepicker({
+								defaultDate:+1,
+								dateFormat: "yy-mm-dd",
+								showSecond: true,
+								changeYear:true,
+								changeMonth:true,
+								timeFormat: 'HH:mm:ss',
+								stepHour: 1,
+								stepMinute: 1,
+								stepSecond: 1
+							});
+							if($(elem).val()==''){
+								$(elem).datetimepicker('setDate',new Date());
+							}
+						}
+					},
+					searchoptions: {
+						defaultValue:new Date(),
+						dataInit: function (elem) {
+							$(elem).datetimepicker({
+								// defaultDate:new Date(),
+								dateFormat: "yy-mm-dd",
+								showSecond: true,
+								changeYear:true,
+								changeMonth:true,
+								timeFormat: 'HH:mm:ss',
+								stepHour: 1,
+								stepMinute: 1,
+								stepSecond: 1
+							});
+							$(elem).datetimepicker('setDate',new Date());
+						},
+						sopt: ["le", "ge"]
+					},
+					editrules:{required:true},
+					editoptions: { defaultValue: (new Date()).format("yyyy-MM-dd hh:mm:ss")},
+					formoptions:{elmprefix:'<span style="color: red;">*</span>'}
+				},
+				{label:'客户',name:'cId',index:'cId',editor:"text", edittype:"select",editable : false,
+                    formatter:function (cellvalue, options, rowObject) {
+						var values = $("#list").jqGrid('getColProp','cId').editoptions.value;
+						var value = values[cellvalue];
+						if(!value){
+							values[cellvalue] = cellvalue;
+							value = cellvalue;
+							$("#list").jqGrid('setColProp','cId',{searchoptions:{value:values}}); //setColProp('cId',{searchoptions:{value:values}});//
+						}
+						return value;
+					},
+					editoptions: {
+						value:(function () {
+                            return getCustomersOptions();
+                        })() , // getCustomersOptions()
+						dataInit: function (elem) {
+							$(elem).select2({
+                                /*width:"100%",*/
+								language: "zh-CN",
+								dropdownParent: $(elem).parent(),
+								placeholder: {
+									id: '-1', // the value of the option
+									text: '请选择一个选项'
+								},
+								allowClear: true,
+								tags:true // 创建不存在的选项,相当于填写功能
+							});
+						}
+					},
+					searchoptions: {
+						value:{}, // 创建完成后获取,见下面 loadComplete
+						dataInit: function (elem) {
+							$(elem).select2({
+								language: "zh-CN",
+								/*width:"100%",*/
+								dropdownParent: $(elem).parent(),
+								placeholder: {
+									id: '-1', // the value of the option
+									text: '请选择一个选项'
+								},
+								allowClear: true,
+								tags:true
+							});
+							$(elem).select2('val','-1');
+						},
+						sopt: ["eq", "ne"]
+					},
+					stype:'select',
+                    editrules:{required:true},
+                    formoptions:{elmprefix:'<span style="color: red;">*</span>'}
+				},
+                {label:'店铺',name:'sId',index:'sId',editor:"text", formatter:"select",edittype:"select",editable : false,
+                    editoptions: {
+                        value: getShopNames(),
+                        dataInit: function (elem) {
+                            $(elem).select2({
+                                language: "zh-CN",
+                                placeholder: {
+                                    id: '-1', // the value of the option
+                                    text: '请选择一个选项'
+                                },
+                                allowClear: true,
+                                // theme: "classic",
+                            });
+                        }
+                    },editrules: {required: true},formoptions:{rowpos: 3, colpos: 1,
+                        elmprefix:'<span style="color: red;">*</span>'},
+                    stype:'select',
+                    searchoptions: {
+                        value: {},
+                        dataInit: function (elem) {
+                            $(elem).css({ width: "100%" }).select2({
+                                language: "zh-CN",
+                                placeholder: {
+                                    id: '-1', // the value of the option
+                                    text: '请选择一个选项'
+                                },
+                                allowClear: true,
+                                // theme: "classic",
+                            });
+                        },
+                        sopt: ["eq", "ne"]
+                    }
+                },
+				{label:'支付',name:'payId',index:'payId',editor:"text",search:false, formatter:"select",edittype:"select",editable : false,
+					editoptions: {
+						value: {0:"现金",1:"挂账",2:"支付宝",3:"微信",4:"其他"}
+					},formoptions:{elmprefix:'<span style="color: red;">*</span>'}
+				},
+				{label:'应收',name:'should',index:'should',editor:"text", editable : false,search:false,
+					/*editoptions: { defaultValue: '0.00'},*/
+                    formatter:function(cellvalue, options, rowObject){
+						return typeof cellvalue == 'object'?cellvalue.$numberDecimal:(cellvalue?cellvalue:"0.00");//代替默认
+					}},
+				{label:'实收',name:'proceed',index:'proceed',editor:"text", editable : false,search:false, editrules:{required:true},
+					editoptions: { defaultValue: '0.00'},
+                    formoptions:{elmprefix:'<span style="color: red;">*</span>'},
+                    formatter:function(cellvalue, options, rowObject){
+				        return typeof cellvalue == 'object'?cellvalue.$numberDecimal:(cellvalue?cellvalue:"0.00");
+                    }},
+				{label:'欠款',name:'arrears',index:'arrears',editor:"text",search:false, editable :false,
+                    formatter:function(cellvalue, options, rowObject){
+                        return typeof cellvalue == 'object'?cellvalue.$numberDecimal:(cellvalue?cellvalue:"0.00");
+                    },
+                    editrules:{required:true},editoptions: { defaultValue: '0.00'},
+                    formoptions:{elmprefix:'<span style="color: red;">*</span>'}}
+			],
+			sortname:'_id',
+			sortorder:'desc', // asc 升序
+			viewrecords:true,
+			rowNum:5,
+			rowList:[5,10],
+			pager:"#pager",
+			caption: "销售单",
+			multiselect: false,
+            // toppager:true,
+            editable: true,
+			jsonReader: {
+				id: "_id",
+				root : "rows",
+				page:"page",
+				total:"total",
+				records:"records",
+				repeatitems: false
+			},
+			loadComplete:function(data){
+			},
+			onSelectRow:function (rowid,status) {
+				// $("#list").jqGrid("expandSubGridRow", rowid);
+			},
+			subGrid : true,
+			subGridOptions: {
+				"plusicon"  : "ui-icon-triangle-1-e",
+				"minusicon" : "ui-icon-triangle-1-s",
+				"openicon"  : "ui-icon-arrowreturn-1-e",
+				// load the subgrid data only once
+				// and the just show/hide
+				"reloadOnExpand" : false,
+				// select the row when the expand column is clicked
+				"selectOnExpand" : true
+			},
+			subGridRowExpanded: function(subGrid_id, row_id) {
+				var subGrid_table_id, pager_id;
+				subGrid_table_id = subGrid_id+"_t";
+				pager_id = "p_"+subGrid_table_id;
+				$("#"+subGrid_id).html("<table id='"+subGrid_table_id+"' class='scroll'></table><div id='"+pager_id+"' class='scroll'></div>");
+				var options ={
+					url: '/afterSales/lists/' + row_id,
+					datatype: "json",
+					mtype: "GET",
+					shrinkToFit: true,
+					toppager:true,
+					editable: true,
+					rownumbers: true,
+					deepempty:true,
+					height: 'auto', //auto
+					width:"400",
+					// autowidth: true,
+					colModel: [{label:'ID',name: '_id',index: '_id',editor: "text",editable: false,hidden:true},
+						{label:'品类',name:'gId',index:'gId',editor:"text", formatter:"select",width:"100",
+							edittype:"select",editable : false, editoptions: {
+								value:getGoodsOptions(),
+								dataInit: function (elem) {
+									$(elem).css({ width: "100%" }).select2({
+										language: "zh-CN",
+										placeholder: {
+											id: '-1', // the value of the option
+											text: '请选择一个选项'
+										},
+										allowClear: true,
+									});
+								}
+							},
+							searchoptions: {
+								value: {},
+								dataInit: function (elem) {
+									$(elem).css({ width: "100%" }).select2({
+										language: "zh-CN",
+										placeholder: {
+											id: '-1', // the value of the option
+											text: '请选择一个选项'
+										},
+										allowClear: true,
+										// theme: "classic",
+									});
+								},
+								sopt: ["eq", "ne"]
+							}
+						},
+						{label:'数量', name: 'num',index: 'num',editor: "text",editable: true,formatter:"integer",width:"80",
+							editrules: {required: true, integer: true},editoptions: { defaultValue: '1'},
+							formoptions:{elmprefix:'<span style="color: red;">*</span>'}
+						}
+					],
+					sortname: '_id',
+					sortorder: 'asc',
+					viewrecords: true,
+					rowNum: -1,
+					pager:"#" + pager_id,
+					// caption: "详细列表",
+					multiselect: false,
+					jsonReader: {
+						id: "_id",
+						root: "rows",
+						page: "page",
+						total: "total",
+						records: "records",
+						repeatitems: false
+					},
+					loadComplete: function (xhr) {
+						// $("#" +subGrid_table_id).jqGrid('setColProp','gId',{searchoptions:{value:values}});
+					}
+				};
+				jQuery("#" +subGrid_table_id).jqGrid(options);
+
+                jQuery("#" +subGrid_table_id).jqGrid('navGrid', '#'+pager_id, {cloneToTop:false,add: false,edit: false,del: false,search: false,refresh: false},
+                        {checkOnSubmit: false, closeAfterEdit: true, reloadAfterSubmit: false, modal: true,
+	                        url: "/sales/" + row_id + "/",
+                            mtype: "put",
+                            beforeShowForm: function (form) {
+                                return [true, ''];
+                            },
+                            onclickSubmit: function (params, postData) {
+                                // params.url = "/sales/" + row_id + '/' + postData[subGrid_table_id + '_id'];
+                                return [true, ''];
+                            },
+                            beforeSubmit: function (postData, formid) {
+                                // var oldId=$("#" +subGrid_table_id).jqGrid('getGridParam','selrow');
+                                var oldData = $("#" +subGrid_table_id).jqGrid('getRowData',postData[subGrid_table_id + '_id']);
+                                postData.oldNum = oldData.num;
+                                postData.oldPid = oldData.pId;
+                                var rowData = $("#list1").jqGrid('getRowData',postData.oldPid);
+	                            if(rowData.num  < postData.num - postData.oldNum){
+		                            return [false, "出货量超过了库存!"];
+	                            }
+	                            var qu = Number(postData.oldNum);
+	                            var price = Number(rowData.price);
+	                            var should = Number($("#list").jqGrid("getCell",row_id,"should"));
+	                            should -= qu * price;
+	                            should +=Number(postData.num)* Number(rowData.price);
+	                            postData.should = should;
+                                return [true, ''];
+                            },
+                            afterSubmit: function (response, postData) {
+	                            $("#list").jqGrid("setCell",row_id,"should",postData.should);
+	                            $("#list").jqGrid("setCell",row_id,"proceed",postData.should);
+	                            var stockNum = $("#list1").jqGrid('getCell',postData.oldPid,'num');
+	                            var exit = stockNum - postData.num + Number(postData.oldNum);
+	                            $("#list1").jqGrid("setCell",postData.oldPid ,"num",exit);
+                                return [true, ''];
+                            }
+                        },  // edit sub
+                        {checkOnSubmit: false, closeAfterAdd: true, reloadAfterSubmit: false, modal: true, jqModal: true, addedrow: 'last',
+	                        url:'clientArray',// url: "/sales/" + row_id,
+                            mtype: "post",
+                            beforeShowForm: function (form) {
+                                var sId=$('#list1').jqGrid('getGridParam','selrow');
+                                if(!sId){
+                                    $("#info").text('请选中库存列表中的条目!');
+                                    $( "#dialog-message" ).dialog( "open" );
+                                    form.dialog("close");
+                                    return [false, ''];
+                                }
+                            },
+                            onclickSubmit: function (params, postData) {
+                                return [true, ''];
+                            },
+                            beforeSubmit: function (postData, formid) {
+                                var sId=$('#list1').jqGrid('getGridParam','selrow');
+                                var rowData = $("#list1").jqGrid('getRowData',sId);
+                                if(postData.num > Number(rowData.num)){
+                                    return [false, "出货量超过了库存!"];
+                                }
+                                postData._id=jsShortId.gen(15);
+                                postData.pId= rowData._id;
+                                postData.gId=rowData.gId;
+                                postData.price = rowData.price;
+                                var should = Number($("#list").jqGrid("getCell",row_id,"should"));
+                                should +=Number(postData.num)* Number(postData.price);
+	                            postData.should = should;
+                                return [true, '']; //return [true, "", jqXhr.responseJSON.id];
+                            },
+                            afterSubmit: function (response, postData) {
+                                //var result=response.responseJSON;
+                                // postData.id = result.id;
+	                            $("#list").jqGrid("setCell",row_id,"should",postData.should);
+	                            $("#list").jqGrid("setCell",row_id,"proceed",postData.should);
+	                            var stockNum = $("#list1").jqGrid('getCell',postData.pId,'num');
+	                            var exit = stockNum - postData.num;
+	                            $("#list1").jqGrid("setCell",postData.pId,"num",exit);
+                                return [true, "",postData._id];
+                            }
+                        },// add sub
+                        {
+                            checkOnSubmit: false, reloadAfterSubmit: false, modal: true,
+	                        url:'clientArray', // url: "/sales/" + row_id ,
+                            mtype: "delete",
+                            onclickSubmit: function (params, postData) {
+                                var rowData = $("#" +subGrid_table_id).jqGrid('getRowData',postData);
+                                // params.url = "/sales/" + row_id + "/" + postData + "?pId=" + rowData.pId +"&&oldNum=" + rowData.num;
+                                return [true, ''];
+                            },
+                            beforeSubmit: function (postData, formid) {
+                                // var oldData = $("#" +subGrid_table_id).jqGrid('getRowData',postData[subGrid_table_id + '_id']);
+                                // postData.oldNum = oldData.num;
+                                // postData.oldPid = oldData.pId;
+                                // postData.oldPrice = oldData.price;
+                                return [true, ''];
+                            },
+                            afterSubmit: function (response, postData) {
+                                var rowData = $("#" +subGrid_table_id).jqGrid('getRowData',postData.id);
+                                var num = Number(rowData.num);
+                                var price = Number(rowData.price);
+                                var should = Number($("#list").jqGrid("getCell",row_id,"should"));
+                                should -=num * price;
+                                $("#list").jqGrid("setCell",row_id,"should",should);
+	                            $("#list").jqGrid("setCell",row_id,"proceed",should);
+                                var rowData1 = $("#list1").jqGrid('getRowData',rowData.pId);
+                                var exit = Number(rowData1.num)  + num;
+                                $("#list1").jqGrid("setCell",rowData.pId,"num",exit);
+                                return [true, ''];
+                            }
+                        }, // del sub
+                        { multipleSearch: true,closeAfterSearch: true} // search
+                );
+                // $('#'+pager_id).hide();
+			}
+		});
+
+        var values = $("#list").getColProp('cId').editoptions.value;
+        $("#list").jqGrid('setColProp','cId',{searchoptions:{value:values}});
+        values = $("#list").getColProp('sId').editoptions.value;
+        $("#list").jqGrid('setColProp','sId',{searchoptions:{value:values}});
+
+		jQuery("#list").jqGrid('navGrid','#pager',{add:false,edit:false,del:true,search:true,refresh:false,
+                    edittitle:"退换货",editicon:'ui-icon-disk',addtitle:'添加销售单',deltitle:'退换货'},
+			{checkOnSubmit:false, closeAfterEdit: true,reloadAfterSubmit:false,
+				modal: true,height:"100%",width:"100%",
+				url:"/afterSales",
+				mtype:"post",
+                editCaption:"退换货",
+                bSubmit:'确认',
+                beforeShowForm : function(form) {
+                    // $("#list").jqGrid('setColProp', 'proceed', { editrules:{required:true,number:true}});
+					// form.find('#account').attr('readOnly',true);//把编辑框中的字段设置为只读的。
+				},
+				onclickSubmit: function(params, postData) {
+					params.url = "/afterSales/" + postData.list_id;
+					params.mtype = 'put';
+					return [true,''];
+				},
+				beforeSubmit:function(postData, formid) {
+					// postData._id = postData.list_id;
+					return [true,''];
+				},
+				afterSubmit:function(response, postData){
+                   $("#list").jqGrid("delRowData", postData.id);
+                    return [true,''];
+				}
+			}, // edit
+			{checkOnSubmit:false, closeAfterAdd: true,reloadAfterSubmit:false,modal: true,
+				jqModal: true,addedrow:'first',height:"100%",width:"100%",
+				url:"clientArray", // /sales
+				mtype:"post",
+				beforeShowForm : function(form) {
+                    form.find("#payId").parent().parent().hide();
+                    form.find("#proceed").parent().parent().hide();
+                    form.find("#arrears").parent().parent().hide();
+                   //  $("#list").jqGrid('setColProp', 'proceed', { editrules:{required:false}});
+				},
+				onclickSubmit: function(params, postData) {
+					return [true,''];
+				},
+				beforeSubmit:function(postData, formid) {
+                    if(null == postData.cId){
+                        return [false,'请选或填写择客户'];
+                    }
+                    postData._id = jsShortId.gen(15);
+                    postData.audit = 0;
+                    // postData.should = 0;
+					return [true,'']; //return [true, "", jqXhr.responseJSON.id];
+				},
+				afterSubmit:function(response, postData){
+					var result=response.responseJSON;
+					// postData.id = result.id;
+					return [true,"",postData._id];
+				},
+				afterComplete : function (response, postData, formid) {
+					$("#list").jqGrid("expandSubGridRow", postData._id);
+                }
+			}, // add
+			{checkOnSubmit:false, reloadAfterSubmit:false,modal: true,
+				url:"afterSales", // /sales
+				mtype:"delete",
+                caption:"退换货",
+                msg:"你确定执行退换货操作吗?",
+                bSubmit:'确定',
+				onclickSubmit: function(params, id) {
+                    params.url = "/afterSales/" + id;
+					return [true,''];
+				},
+                beforeSubmit: function (id, formid) {
+                    return [true, ''];
+                },
+				afterSubmit:function(response, postData) {
+					return [true, ''];
+				}
+			}, // del
+			{multipleSearch: true, multipleGroup: false,closeAfterSearch:true,recreateForm:true
+				// beforeShowSearch:function(form) {
+				// 	$("#list").jqGrid('setGridParam',{url:"/salesReview/lists"});
+				// 	return [true,""];
+				// }
+			} // search
+		);
+        });
+</script>
+</body>
+</html>

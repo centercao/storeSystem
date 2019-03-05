@@ -31,7 +31,7 @@ router.post('/',async function (ctx, next) {
 	ctx.assert(body.pass, 400, "参数错误!",{details:{ pass: "undefined"}});
 	let pass = cryptoPassFunc(body.pass);
 	// 验证
-	let res = await ctx.mongodb.db.collection('users').find({account:body.account,pass:pass}).toArray();
+	let res = await ctx.mongodb.db.collection('users').find({_id:body.account,pass:pass}).toArray();
 	ctx.assert(res.length, 400, "参数错误!",{details:{account:body.account, pass: body.pass}});
 	ctx.session.user = {};
 	ctx.session.user.account = body.account;
@@ -39,7 +39,8 @@ router.post('/',async function (ctx, next) {
 	ctx.session.user.right = res[0].right;
 	ctx.session.user.theme = res[0].theme || 'ui-darkness'; //'ui-darkness';
 	ctx.session.user.image = res[0].image || 'images/users/user2-160x160.jpg';
-	ctx.session.user.pId = res[0].pId=="admin"?res[0].account:res[0].pId;
+	ctx.session.user.pId = res[0].pId=="admin"?res[0]._id:res[0].pId;
+	ctx.session.user.shop = res[0].shop;
 	ctx.body = {};
 });
 // 登出

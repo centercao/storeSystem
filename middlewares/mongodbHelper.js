@@ -1,5 +1,5 @@
 const MongoClient = require('mongodb').MongoClient;
-var ObjectID = require('mongodb').ObjectID;
+var connect = require('mongodb'); //ObjectID
 const _ = require('lodash');
 const defaulfOptions = {
 	host: 'localhost',
@@ -21,7 +21,7 @@ var CRUD =   function(options){
 		}else{
 			this.client = client;
 			this.db = client.db(options.db);
-			this.ObjectID = ObjectID;
+			this.connect = connect;// mongodb 静态方法
 		}
 	});
 };

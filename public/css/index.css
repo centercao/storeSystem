@@ -2,6 +2,7 @@
 * {
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
 }
 
 .logoPanel {
@@ -93,12 +94,13 @@
     width: 100%;
     height: 100%;
     font-size:small;
+    /*overflow-y: auto;*/
 }
 .tabContent{
     margin: 0;
     padding:1px 6px 2px 1px!important;
     /*padding: 0.5em!important;*/
-    /*width: 100%;*/
+    width: 100%;
     height: 100%;
 }
 .treeViewer{

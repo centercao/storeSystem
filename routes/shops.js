@@ -23,17 +23,18 @@ router.get('/list',  async function (ctx, next) {
 	let  where={pId:ctx.session.user.account};
 	let projection={};
 	let res = await ctx.mongodb.db.collection('shops').find(where).project(projection).toArray();
-	ctx.body = res;
+	ctx.body = {rows:res};
 });
 // 添加
 router.post('/',async function (ctx, next) {
 	let body = ctx.request.body;
 	// 验证参数
 	ctx.assert(ctx.session.user.account, 400, "参数错误!",{details:{ pId: "undefined"}});
+	ctx.assert(body._id, 400, "参数错误!",{details:{ _id: "undefined"}});
 	ctx.assert(body.name, 400, "参数错误!",{details:{ name: "undefined"}});
-	let res = await ctx.mongodb.db.collection('shops').insertOne({pId: ctx.session.user.account,name:body.name});
+	let res = await ctx.mongodb.db.collection('shops').insertOne({_id:body._id, pId: ctx.session.user.account,name:body.name});
 	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
-	ctx.body = {id:res.insertedId.toString()};
+	ctx.body = {id:res.insertedId};
 });
 router.put('/', async function (ctx, next) {
 	ctx.body = {};
@@ -44,7 +45,7 @@ router.put('/:id', async function (ctx, next) {
 	// 验证参数
 	ctx.assert(body.name, 400, "参数错误!",{details:{ name: "undefined"}});
 	let id = ctx.params.id;
-	let res = await ctx.mongodb.db.collection('shops').updateOne({_id:ctx.mongodb.ObjectID(id)},{$set:{name:body.name}});
+	let res = await ctx.mongodb.db.collection('shops').updateOne({_id:id},{$set:{name:body.name}});
 	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
 	// ctx.throw(503, "服务器无法处理当前请求",{details:{ result: res.result}});
 	ctx.body = res.result;
@@ -52,7 +53,7 @@ router.put('/:id', async function (ctx, next) {
 // 删除用户
 router.delete('/:id',async function (ctx, next) {
 	let id = ctx.params.id;
-	let res = await ctx.mongodb.db.collection('shops').deleteOne({_id:ctx.mongodb.ObjectID(id)});
+	let res = await ctx.mongodb.db.collection('shops').deleteOne({_id:_id});
 	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
 	// ctx.throw(503, "服务器无法处理当前请求",{details:{ result: res.result}});
 	ctx.body = res.result;
