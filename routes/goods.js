@@ -22,9 +22,9 @@ router.get('/',  async function (ctx, next) {
 	});
 });
 // 获得信息
-router.get('/list',  async function (ctx, next) {
+router.get('/lists',  async function (ctx, next) {
 	// let query = ctx.request.query;
-	let  where={pId:ctx.session.user.account};
+	let  where={pId:ctx.session.user.pId};
 	let projection={};
 	let res = await ctx.mongodb.db.collection('goods').find(where).project(projection).toArray();
 	ctx.body = {rows:res};
@@ -36,7 +36,7 @@ router.post('/',async function (ctx, next) {
 		_id:body._id,
 		pId:ctx.session.user.pId,
 		name:body.name,
-		warn:Number(body.warn),
+		warn:body.warn?Number(body.warn):5,
 		remarks:body.remarks
 	};
 	// 验证参数

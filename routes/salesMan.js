@@ -9,12 +9,9 @@
  * login/logout：{token，reToken}
  **********************属性*********************/
 const router = require('koa-router')();
-const crypto = require('crypto');
-router.prefix('/salesReview');
-function cryptoPassFunc (password) {
-	const md5 = crypto.createHash('md5'); //'sha1', 'md5', 'sha256', 'sha512'等
-	return md5.update(password).digest('hex');
-}
+router.prefix('/salesMan');
+const shortId=require('jsnodeid');
+
 function OpMap(op, data) {
 	switch (op) {
 		case 'eq':
@@ -50,7 +47,7 @@ function formatData(field,dd) {
 }
 // 返回用户页面
 router.get('/',  async function (ctx, next) {
-	await ctx.render('salesReview', {
+	await ctx.render('salesMan', {
 		title:"销售审核",theme:ctx.session.user.theme
 	});
 });
@@ -70,7 +67,7 @@ router.get('/lists',  async function (ctx, next) {
 		if(ctx.session.user.shop){
 			where[sId]=ctx.session.user.shop;
 		}
-		let projection={lists:0};
+		let projection={};
 		let sidx = query.sidx;
 		let sort = {};
 		sort[sidx] = query.sord == "asc"?1:-1;
@@ -165,13 +162,37 @@ router.get('/transport/lists',  async function (ctx, next) {
 	let res = await ctx.mongodb.db.collection('transport').find(where).project(projection).toArray();
 	ctx.body = {rows:res};
 });
-// 审核
+//
 router.put('/:id', async function (ctx, next) {
 	let body = ctx.request.body;
 	let id = ctx.params.id;
+	let data = {
+		tId:body.tId,
+		payId:body.payId,
+		mode:body.mode,
+		rem:body.rem
+	};
 	let res = await ctx.mongodb.db.collection('sales').updateOne({_id:id},
-		{$set:{audit:body.audit}});
-	ctx.assert(res.modifiedCount, 503, "服务器无法处理当前请求",{details:"不能执行"});
+		{$set:data});
+	ctx.assert(res.modifiedCount, 503, "服务器无法处理当前请求",{details:"不能修改"});
 	ctx.body = res.modifiedCount;
+});
+router.delete('/:id/:subId', async function (ctx, next) {
+	//let body = ctx.request.body;
+	let subId = ctx.params.subId;// 订单id
+	let id = ctx.params.id;
+	let transData = {
+		_id:shortId.uuid(),
+		type:3, // 删除
+		s_id:subId,
+		s_c:"subStocks", // 源库
+		d_id:id,
+		d_c:"sales", // 目标库
+		state:0 // initial
+	};
+	// 插入事务
+	let res = await ctx.mongodb.db.collection('transactions').insertOne(transData);
+	ctx.assert(res.insertedCount, 503, "服务器无法处理当前请求",{details:"不能删除"});
+	ctx.body = res.id;
 });
 module.exports = router;

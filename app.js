@@ -3,7 +3,7 @@ var path = require('path');
 let koaBody = require('koa-body');
 const cors = require('koa2-cors'); // 跨域
 const chalk = require('chalk'); // color
-const server = require('koa-static');
+const staticServer = require('koa-static');
 const views = require('koa-views'); // views
 const session = require('koa-session');
 const http = require('http');
@@ -12,6 +12,7 @@ const apiError = require("./middlewares/apiError");
 const FormatOutput = require("./middlewares/formatOutput");
 const accessToken = require("./middlewares/accessToken");
 const Mongodb = require("./middlewares/mongodbHelper");
+const trans = require("./middlewares/transactions");
 const mongodb = new Mongodb({
 	host: 'localhost',
 	port: 27017,
@@ -55,6 +56,7 @@ function time(start,end) {
 }
 // Koa 推荐使用该命名空间挂载数据
 app.context.mongodb = mongodb;
+trans.mongodb = mongodb;
 
 // middlewares
 
@@ -69,7 +71,7 @@ app.use(session({
 },app));
 app.use(cors()); // 跨域
 // static file dir
-app.use(server(__dirname + '/public'));
+app.use(staticServer(__dirname + '/public'));
 app.use(views(__dirname + '/views', {
 	map: {html: 'ejs'}
 }));
@@ -124,10 +126,7 @@ app.use(async (ctx, next) => {
 	try {
 		await next();
 	} catch (error) {
-		ctx.body = {
-			message:error.message,
-			details:error.details
-		};
+		ctx.body = error.message + ",详情:" + error.details;
 		ctx.status = error.status || 503;
 		throw error; // ->logs
 	}
@@ -144,9 +143,12 @@ app.use(async (ctx, next) => {
 			return;
 		}
 	}
-	if (!ctx.session.user || !ctx.session.user.account) {
+	let Authorization = ctx.request.get("Authorization");
+	if (!ctx.session.user) {
 		console.log('login status validate fail')
 		console.log(ctx.request.url);
+		let isAjaxRequest = ctx.request.get("X-Requested-With");
+		ctx.assert(!isAjaxRequest, 401, "客户端登录错误!",{details:" 没有登录或登录过期,请重新登录!"});
 		ctx.redirect('/login');
 		return;
 	}

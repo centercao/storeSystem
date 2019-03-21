@@ -9,12 +9,9 @@
  * login/logout：{token，reToken}
  **********************属性*********************/
 const router = require('koa-router')();
-const crypto = require('crypto');
-router.prefix('/salesReview');
-function cryptoPassFunc (password) {
-	const md5 = crypto.createHash('md5'); //'sha1', 'md5', 'sha256', 'sha512'等
-	return md5.update(password).digest('hex');
-}
+router.prefix('/supplyOrders');
+
+// 查询条件转换
 function OpMap(op, data) {
 	switch (op) {
 		case 'eq':
@@ -37,9 +34,13 @@ function OpMap(op, data) {
 			break;
 	}
 }
+// 格式化数据
 function formatData(field,dd) {
 	let data = dd;
 	switch (field){
+		case 'pay':
+			data = Number(dd);
+			break;
 		case 'date':
 			data = dd?new Date(dd):new Date();
 			break;
@@ -48,10 +49,10 @@ function formatData(field,dd) {
 	}
 	return data;
 }
-// 返回用户页面
+// 返回页面
 router.get('/',  async function (ctx, next) {
-	await ctx.render('salesReview', {
-		title:"销售审核",theme:ctx.session.user.theme
+	await ctx.render('supplyOrders', {
+		title:"订单管理",theme:ctx.session.user.theme
 	});
 });
 // 获得信息
@@ -68,9 +69,18 @@ router.get('/lists',  async function (ctx, next) {
 		let filter = query.filters;
 		let  where={pId:ctx.session.user.pId};
 		if(ctx.session.user.shop){
-			where[sId]=ctx.session.user.shop;
+			where[shop]=ctx.session.user.shop;
 		}
-		let projection={lists:0};
+		let projection={"pId" :1,
+			"gId" : 1,
+			"suId" : 1,
+			"date" : 1,
+			"num" : 1,
+			"iNum" : 1,
+			"cost" : 1,
+			"price" : 1,
+			"pay" : 1,
+			"rem" : 1};
 		let sidx = query.sidx;
 		let sort = {};
 		sort[sidx] = query.sord == "asc"?1:-1;
@@ -108,7 +118,7 @@ router.get('/lists',  async function (ctx, next) {
 			let data = formatData(query.searchField,query.searchString);
 			where[query.searchField] = OpMap(query.searchOper,data);
 		}
-		let res = await ctx.mongodb.db.collection('sales').find(where).project(projection);
+		let res = await ctx.mongodb.db.collection('stocks').find(where).project(projection);
 		let counts = await res.count();
 		res = await res.sort(sort).skip((page-1)*rows).limit(rows).toArray();
 		ret["total"] = Math.ceil(counts / rows); // 总页数
@@ -117,24 +127,16 @@ router.get('/lists',  async function (ctx, next) {
 	}
 	ctx.body = ret;
 });
-// 客户信息
-router.get('/customers/lists',  async function (ctx, next) {
-	// let query = ctx.request.query;
-	let  where={pId:ctx.session.user.pId};
-	let projection={};
-	let res = await ctx.mongodb.db.collection('customers').find(where).project(projection).toArray();
-	ctx.body = {rows:res};
-})
-// 品类信息
-router.get('/goods/lists',  async function (ctx, next) {
+// goods信息
+router.get('/goodsLists',  async function (ctx, next) {
 	// let query = ctx.request.query;
 	let  where={pId:ctx.session.user.pId};
 	let projection={};
 	let res = await ctx.mongodb.db.collection('goods').find(where).project(projection).toArray();
 	ctx.body = {rows:res};
 });
-// 店库信息
-router.get('/shops/lists',  async function (ctx, next) {
+// 商店
+router.get('/shopsLists',  async function (ctx, next) {
 	// let query = ctx.request.query;
 	let  where={pId:ctx.session.user.pId};
 	let projection={};
@@ -142,36 +144,67 @@ router.get('/shops/lists',  async function (ctx, next) {
 	ctx.body = {rows:res};
 });
 // 供应商
-router.get('/suppliers/lists',  async function (ctx, next) {
+router.get('/suppliersLists',  async function (ctx, next) {
 	// let query = ctx.request.query;
 	let  where={pId:ctx.session.user.pId};
 	let projection={};
 	let res = await ctx.mongodb.db.collection('suppliers').find(where).project(projection).toArray();
 	ctx.body = {rows:res};
 });
-// 操作者
-router.get('/operator/lists',  async function (ctx, next) {
-	// let query = ctx.request.query;
-	let  where ={pId:ctx.session.user.pId};
-	let projection={name:1};
-	let res = await ctx.mongodb.db.collection('users').find(where).project(projection).toArray();
-	ctx.body = {rows:res};
+// 添加
+router.post('/',async function (ctx, next) {
+	let body = ctx.request.body;
+	// 验证参数
+	let data = {
+		_id: body._id,
+		gId: body.gId,   // 商品类别
+		suId: body.suId, // 供应商
+		iNum: Number(body.iNum), // 进货量
+		cost:ctx.mongodb.connect.Decimal128.fromString(body.cost),// 进价
+		price: ctx.mongodb.connect.Decimal128.fromString(body.price),// 定价
+	};
+	for(let i in data){
+		ctx.assert(data[i], 400, "参数错误!",{details:{ i: "未定义"}});
+	}
+	data.date= body.date? new Date(body.date):new Date();
+	data.pId = ctx.session.user.pId; // 总账户
+	data.pay = Number(body.pay); // 支付情况
+	data.num = data.iNum; // 库存量
+	data.rem= body.rem||""; // 备注
+	let res = await ctx.mongodb.db.collection('stocks').insertOne(data);
+	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
+	ctx.body = {id:res.insertedId};
 });
-// 运输
-router.get('/transport/lists',  async function (ctx, next) {
-	// let query = ctx.request.query;
-	let  where={pId:ctx.session.user.pId};
-	let projection={};
-	let res = await ctx.mongodb.db.collection('transport').find(where).project(projection).toArray();
-	ctx.body = {rows:res};
-});
-// 审核
+// 修改
 router.put('/:id', async function (ctx, next) {
 	let body = ctx.request.body;
+	// 验证参数
+	let data = {
+		gId: body.gId,
+		suId: body.suId,
+		date: new Date(body.date),
+		num: Number(body.num),
+		cost:ctx.mongodb.connect.Decimal128.fromString(body.cost),// 进价
+		price: ctx.mongodb.connect.Decimal128.fromString(body.price),// 定价
+	};
+	for(let i in data){
+		ctx.assert(data[i], 400, "客户端参数错误!",{details:i+" 未提供"});
+	}
+	let dNum = Number(body.dNum);
+	ctx.assert((dNum>= 0), 400, "客户端参数错误!",{details:"数量小于已分配量"});
+	data.pay=Number(body.pay); // 支付
+	data.rem= body.rem;
 	let id = ctx.params.id;
-	let res = await ctx.mongodb.db.collection('sales').updateOne({_id:id},
-		{$set:{audit:body.audit}});
-	ctx.assert(res.modifiedCount, 503, "服务器无法处理当前请求",{details:"不能执行"});
+	let res = await ctx.mongodb.db.collection('stocks').updateOne({_id:id,pId:ctx.session.user.pId,
+		"$where":"this.dNum <= " + data.num},{$set:data});
+	ctx.assert(res.modifiedCount, 503, "服务器无法处理当前请求",{details:"不能执行的操作"});
 	ctx.body = res.modifiedCount;
+});
+// 删除
+router.delete('/:id',async function (ctx, next) {
+	let id = ctx.params.id;
+	let res = await ctx.mongodb.db.collection('stocks').deleteOne({_id:id,pId:ctx.session.user.pId,$where:"this.dNum == 0"});
+	ctx.assert(res.deletedCount, 503, "服务器无法处理当前请求",{details:"删除失败或不允许删除!"});
+	ctx.body = {id:id};
 });
 module.exports = router;

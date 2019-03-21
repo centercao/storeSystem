@@ -10,7 +10,7 @@
 	<link rel="stylesheet" href="css/index.css">
 
 	<script type="text/javascript" src="js/jquery-3.3.1.min.js"></script>
-	<script type="text/javascript" src="js/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="js/jquery-ui.js"></script>
 	<script type="text/javascript" src="jqLayout/js/jqLayout.js"></script>
 	<script type="text/javascript" src="jQuery-contextMenu/2.8.0/jquery.contextMenu.js"></script>
 	<script type="text/javascript" src="jQuery-contextMenu/2.8.0/jquery.ui.position.min.js"></script>
@@ -24,14 +24,17 @@
 </head>
 <body class="jqLayout">
 <!--ui-widget-header-->
+<div id="logDiv">
+
+</div>
 <div class="ui-jqLayout-north">
 	<div class="logoPanel">
 		<img class="logImage" src="images/top_logo.png">
 	</div>
 	<div class="system">账务邦服务系统</div>
 	<div class="notice" title="查看通知">
-		<span class="fa fa-bell-o"></span>
-		<span class="noticeLabel">3</span>
+		<!--<span class="fa fa-bell-o"></span>-->
+		<!--<span class="noticeLabel">3</span>-->
 	</div>
 	<div class="userImage">
 		<img class="user-image" src="<%= userImage %>">
@@ -51,6 +54,28 @@
 	</div>
 </div>
 <script type="text/javascript">
+	$("#logDiv").dialog({
+		modal: true,
+		autoOpen: false,
+		resizable:false,
+		closeOnEscape:false,
+		open:function(event,ui){
+			$(".ui-dialog-titlebar-close", $(this).parent()).hide();
+		},
+		title:'用户登录',
+		overlay: {
+			backgroundColor: '#000',
+			opacity: 0.1
+		},
+		buttons:{
+			"确定":function(){
+				$("#logDiv").dialog("close");
+			},
+			"取消": function() {
+				$("#logDiv").dialog("close");
+			}
+		}
+	});
 	let tabs;
 	function addTab(id,name,url) {
 		let tabList = $('#tabs .tabList > li[data-id="'+ id+ '"]');
@@ -143,40 +168,32 @@
 			$( "#" + panelId ).remove();
 			tabs.tabs( "refresh" );
 		});
-		// 获得子菜单
-		function getChildrenData(data, action) {
-			if (action == null) return;
-			let reveal = new Array();
-			$(data).each(function (i, v) {
-				if (action(v)) {
-					reveal.push(v);
-				}
-			});
-			return reveal;
-		}
 		function addTree(data) {
 			let $tree = '';
 			$.each(data, function (i) {
 				let row = data[i];
-				if (row.pId == "0") {
-					$tree += '<h3 class="treeTitle">'+ row.name+ '</h3><ul class="menu">';
-					let childNodes = getChildrenData(data, function (v) { return v.pId == row.id });
-					$.each(childNodes,function (j) {
-						let nodeRow = childNodes[j] ;
-						$tree += '<li data-id="' + nodeRow.id + '" data-url="'+ nodeRow.url +
-								'"><a href="#"><span class="'+ (nodeRow.icon||'ui-icon ui-icon-disk' )+ '"></span>' + nodeRow.name + '</a></li>';
-					});
-					$tree += "</ul>";
-				}
+				$tree += '<h3 class="treeTitle">'+ row.name+ '</h3><ul class="menu">';
+				let childNodes = row.items;
+				$.each(childNodes,function (j) {
+					let nodeRow = childNodes[j] ;
+					$tree += '<li data-id="' + j + '" data-url="'+ j +
+							'"><a href="#"><span class="'+ (nodeRow.icon||'ui-icon ui-icon-disk' )+ '"></span>' + nodeRow + '</a></li>';
+				});
+				$tree += "</ul>";
 			});
 			return $tree;
 		}
 		// 获取权限
-		$.ajax({
+		runAjax("get","/index/rightItems",{},function (err,result) {
+			if(!err){
+				$('#accordion').append(addTree(result));
+			}
+		});
+		/*$.ajax({
 			cache: true,
 			type: "get",
 			timeout: 2000,
-			url: "/rights/abc",
+			url: "/rights/items",
 			data: {},
 			async: false, // 同步
 			beforeSend: function (xhr) {
@@ -188,7 +205,7 @@
 			success: function (result, statusText, xhr) {
 				$('#accordion').append(addTree(result));
 			}
-		});
+		});*/
 
 		$( ".treeViewer .menu" ).menu();
 		$( "#accordion" ).accordion({

@@ -36,10 +36,10 @@ router.post('/',async function (ctx, next) {
 	ctx.session.user = {};
 	ctx.session.user.account = body.account;
 	ctx.session.user.name = res[0].name;
-	ctx.session.user.right = res[0].right;
+	ctx.session.user.rights = res[0].rights;
 	ctx.session.user.theme = res[0].theme || 'ui-darkness'; //'ui-darkness';
 	ctx.session.user.image = res[0].image || 'images/users/user2-160x160.jpg';
-	ctx.session.user.pId = res[0].pId=="admin"?res[0]._id:res[0].pId;
+	ctx.session.user.pId = res[0].pId =="admin"?body.account:res[0].pId;
 	ctx.session.user.shop = res[0].shop;
 	ctx.body = {};
 });

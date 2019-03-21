@@ -2,42 +2,45 @@
 <html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<link rel="stylesheet" type="text/css" href="jqGrid/css/ui.jqgrid.css" />
-	<link rel="stylesheet" type="text/css" href="themes/<%= theme %>/jquery-ui.min.css" />
-	<script type="text/javascript" src="js/jquery-3.3.1.min.js"></script>
-	<script type="text/javascript" src="jqGrid/js/grid.locale-cn.js"></script>
-	<script type="text/javascript" src="jqGrid/js/jquery.jqGrid.js"></script>
-	<script type="text/javascript" src="js/jquery-ui.min.js"></script>
-	<script type="text/javascript" src="js/index.js"></script>
-	<script type="text/javascript" src="js/jsNodeId.js"></script>
+	<link rel="stylesheet" type="text/css" href="/jqGrid/css/ui.jqgrid.css" />
+	<link rel="stylesheet" type="text/css" href="/themes/<%= theme %>/jquery-ui.min.css" />
+	<script type="text/javascript" src="/js/jquery-3.3.1.min.js"></script>
+	<script type="text/javascript" src="/jqGrid/js/grid.locale-cn.js"></script>
+	<script type="text/javascript" src="/jqGrid/js/jquery.jqGrid.js"></script>
+	<script type="text/javascript" src="/js/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="/js/index.js"></script>
+	<script type="text/javascript" src="/js/jsNodeId.js"></script>
 	<style type="text/css">
 		* {
 			margin: 0;
 			padding: 0;
 			font-size: small;
 		}
-		.ui-jqgrid-caption{
-			display: none;
+		html, body {
+			/*overflow-x: hidden;*/
+			-ms-overflow-style: scrollbar;
+			height: 100%;
+			box-sizing: border-box;
 		}
 	</style>
 </head>
 <body>
-<table id="list"></table>
-<div id="pager"></div>
+<div id="list_1" style="padding:5px;">
+	<table id="list"></table>
+	<div id="pager"></div>
+</div>
 <script type="text/javascript">
 	$(function(){
 		$(window).resize(function(){
 			$(window).unbind("onresize");
-			var winWh = pageSize();
-			$("#list").jqGrid('setGridWidth', $(window).width()-8);//.jqGrid('setGridHeight', winWh.WinH-86);
+			$("#list").jqGrid('setGridWidth', $("#list_1").width());//.jqGrid('setGridHeight', winWh.WinH-86);
 			$(window).bind("onresize", this);
 		});
 	});
-	// $.fn.select2.defaults.theme_default = "jquery-ui";
 	$(document).ready(
 		function() {
 			jQuery("#list").jqGrid({
-				url:'/shops/list', //
+				url:'/shops/lists', //
 				datatype: "json",
 				/*dataType:'local',*/
 				mtype : "GET",
@@ -49,7 +52,11 @@
 				colModel:[
 					{label:'ID',name:'_id',index:'_id', hidden:true,editable : false}, //width:60,
 					{label:'pId',name:'pId',index:'pId',editor:"text", editable : false,hidden:true},
-					{label:'名称',name:'name',index:'name',editor:"text", editable : true}
+					{label:'名称',name:'name',index:'name',editor:"text", editable : true,
+						editrules: {required: true},
+						formoptions: {
+							elmprefix: '<span style="color: red;">*</span>'
+						}}
 				],
 				sortname:'_id',
 				sortorder:'asc',
@@ -57,7 +64,7 @@
 				rowNum:10,
 				rowList:[10,20,30],
 				pager:"#pager",
-				caption: "<%= title %>",
+				// caption: "<%= title %>",
 				multiselect: false,
 				jsonReader: {
 					id: "_id",
@@ -68,6 +75,11 @@
 					repeatitems: false
 				},
 				loadComplete:function(xhr){
+				},
+				ajaxGridOptions:{
+					beforeSend:function (xhr) {
+						xhr.setRequestHeader('Authorization', 'test-value');
+						}
 				}
 			});
 			jQuery("#list").jqGrid('navGrid','#pager',{add:true,edit:true,del:true,search:false,refresh:false},
@@ -75,17 +87,11 @@
 					checkOnSubmit:false, closeAfterEdit: true,reloadAfterSubmit:false,modal: true,
 					url:"/shops",
 					mtype:"put",
-					beforeShowForm : function(form) {
-						form.find('#account').attr('readOnly',true);//把编辑框中的字段设置为只读的。
+					errorTextFormat: function (data) {
+						return "错误代码:" + data.status + ",信息:" + (data.responseText || data.statusText);
 					},
 					onclickSubmit: function(params, postData) {
 						params.url = "/shops/" + postData.list_id;
-						return [true,''];
-					},
-					beforeSubmit:function(postData, formid) {
-						return [true,''];
-					},
-					afterSubmit:function(response, postData){
 						return [true,''];
 					}
 				},
@@ -93,8 +99,8 @@
 					checkOnSubmit:false, closeAfterAdd: true,reloadAfterSubmit:false,modal: true,jqModal: true,addedrow:'last',
 					url:"/shops",
 					mtype:"post",
-					onclickSubmit: function(params, postData) {
-						return [true,''];
+					errorTextFormat: function (data) {
+						return "错误代码:" + data.status + ",信息:" + (data.responseText || data.statusText);
 					},
 					beforeSubmit:function(postData, formid) {
 						postData._id = jsShortId.gen(15);
@@ -110,6 +116,9 @@
 					checkOnSubmit:false, reloadAfterSubmit:false,modal: true,
 					url:"/shops",
 					mtype:"delete",
+					errorTextFormat: function (data) {
+						return "错误代码:" + data.status + ",信息:" + (data.responseText || data.statusText);
+					},
 					onclickSubmit: function(params, postData) {
 						params.url = "/shops/" + postData;
 						return [true,''];

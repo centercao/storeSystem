@@ -10,6 +10,7 @@
  **********************属性*********************/
 const router = require('koa-router')();
 router.prefix('/stocks');
+const shortId=require('jsnodeid');
 
 // 查询条件转换
 function OpMap(op, data) {
@@ -38,7 +39,7 @@ function OpMap(op, data) {
 function formatData(field,dd) {
 	let data = dd;
 	switch (field){
-		case 'case':
+		case 'pay':
 			data = Number(dd);
 			break;
 		case 'date':
@@ -52,7 +53,7 @@ function formatData(field,dd) {
 // 返回页面
 router.get('/',  async function (ctx, next) {
 	await ctx.render('stocks', {
-		title:"入库管理",theme:ctx.session.user.theme
+		title:"配货管理",theme:ctx.session.user.theme
 	});
 });
 // 获得信息
@@ -67,11 +68,17 @@ router.get('/lists',  async function (ctx, next) {
 	ret["rows"] = [];
 	if (eval(query._search.toLowerCase())) {
 		let filter = query.filters;
-		let  where={pId:ctx.session.user.account};
+		let  where={pId:ctx.session.user.pId};
 		if(ctx.session.user.shop){
 			where[shop]=ctx.session.user.shop;
 		}
-		let projection={};
+		let projection={"pId" :1,
+			"gId" : 1,
+			"suId" : 1,
+			"date" : 1,
+			"num" : 1,
+			"iNum" : 1,
+			"rem" : 1};// 除去异动
 		let sidx = query.sidx;
 		let sort = {};
 		sort[sidx] = query.sord == "asc"?1:-1;
@@ -118,63 +125,235 @@ router.get('/lists',  async function (ctx, next) {
 	}
 	ctx.body = ret;
 });
-// 添加
-router.post('/',async function (ctx, next) {
+// 分库表查询
+router.get('/subLists/:id',  async function (ctx, next) {
+	let query = ctx.request.query;
+	let id = ctx.params.id;
+	let page = parseInt(query.page);
+	let rows = parseInt(query.rows);
+	let ret = {};
+	ret["total"] = 0;
+	ret["page"] = page;
+	ret["records"] = 0;
+	ret["rows"] = [];
+	let  where = {dId:id};
+	let projection = {sId:1,num:1,rem:1};
+	let res = await ctx.mongodb.db.collection('subStocks').find(where,projection).toArray();
+	let counts = res.length;
+	ret["total"] = Math.ceil(counts / rows); // 总页数
+	ret["records"] = counts;
+	ret["rows"] = res;
+	ctx.body = ret;
+});
+// 异动表查询
+router.get('/lists/:dId/:subId',  async function (ctx, next) {
+	let query = ctx.request.query;
+	let dId = ctx.params.dId; // 订单id
+	let subId = ctx.params.subId; // 分库id
+	let page = parseInt(query.page);
+	let rows = parseInt(query.rows);
+	let ret = {};
+	ret["total"] = 0;
+	ret["page"] = page;
+	ret["records"] = 0;
+	ret["rows"] = [];
+	let  where = {dId:dId,subId:subId};
+	let projection = {};
+	let res = await ctx.mongodb.db.collection('unuStocks').find(where,projection).toArray();
+	let counts = res.length;
+	ret["total"] = Math.ceil(counts / rows); // 总页数
+	ret["records"] = counts;
+	ret["rows"] = res;
+	ctx.body = ret;
+});
+// goods信息
+router.get('/goodsLists',  async function (ctx, next) {
+	// let query = ctx.request.query;
+	let  where={pId:ctx.session.user.pId};
+	let projection={};
+	let res = await ctx.mongodb.db.collection('goods').find(where).project(projection).toArray();
+	ctx.body = {rows:res};
+});
+// 商店
+router.get('/shopsLists',  async function (ctx, next) {
+	// let query = ctx.request.query;
+	let  where={pId:ctx.session.user.pId};
+	let projection={};
+	let res = await ctx.mongodb.db.collection('shops').find(where).project(projection).toArray();
+	ctx.body = {rows:res};
+});
+// 供应商
+router.get('/suppliersLists',  async function (ctx, next) {
+	// let query = ctx.request.query;
+	let  where={pId:ctx.session.user.pId};
+	let projection={};
+	let res = await ctx.mongodb.db.collection('suppliers').find(where).project(projection).toArray();
+	ctx.body = {rows:res};
+});
+// 分库
+router.post('/:id',async function (ctx, next) {
 	let body = ctx.request.body;
-	// 验证参数
+	let id = ctx.params.id; // 订单id
+	let ownerId = shortId.uuid();
 	let data = {
-		_id: body._id,
-		pId: ctx.session.user.pId, // 总客户
-		gId: body.gId,   // 商品类别
-		sId: body.sId,   // 商店
-		suId: body.suId, // 供应商
-		date: new Date(body.date),
-		num: Number(body.num), // 数量
-		inPrice:ctx.mongodb.connect.Decimal128.fromString(body.inPrice),// 进价
-		price: ctx.mongodb.connect.Decimal128.fromString(body.price),// 定价
+		_id:ownerId,
+		pId:ctx.session.user.pId,
+		dId:id,
+		sId:body.sId,   // 店库
+		gId:body.gId,
+		num:Number(body.num),
 	};
+	// 验证参数
 	for(let i in data){
 		ctx.assert(data[i], 400, "参数错误!",{details:{ i: "未定义"}});
 	}
-	data.sNum = 0;
-	data.tNum = 0;
-	data.uNum = 0;
-	data.remarks= body.remarks;
-	let res = await ctx.mongodb.db.collection('stocks').insertOne(data);
-	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
-	ctx.body = {id:res.insertedId};
-});
-router.put('/', async function (ctx, next) {
-	ctx.body = {};
-});
-// 修改
-router.put('/:id', async function (ctx, next) {
-	let body = ctx.request.body;
-	// 验证参数
-	ctx.assert(ctx.session.user.account, 400, "参数错误!",{details:{ account: "未登陆"}});
-	let data = {
-		gId: body.gId,
-		sId: body.sId,
-		suId: body.suId,
-		date: new Date(body.date),
-		num: Number(body.num),
-		inPrice: Number(body.inPrice),
-		price: Number(body.price)
+	data.date = new Date();
+	data.rem = body.rem || "";
+	let transData = {
+		_id:shortId.uuid(),
+		type:1, // 分库(添加)
+		s_id:id,
+		s_c:"stocks", // 源库
+		args:data,
+		d_id:ownerId,
+		d_c:"subStocks", // 目标库
+		state:0 // initial
 	};
+	// 插入分库事务
+	let res = await ctx.mongodb.db.collection('transactions').insertOne(transData);
+	ctx.assert(res.insertedCount, 503, "服务器无法处理当前请求",{details:"不能执行的操作"});
+	ctx.body = {id:ownerId};
+});
+// 异动
+router.post('/:dId/:subId',async function (ctx, next) {
+	let body = ctx.request.body;
+	let dId = ctx.params.dId; // 订单
+	let subId = ctx.params.subId; // 分库id
+	let ownerId = shortId.uuid();
+	let data = {
+		_id:ownerId,
+		pId:ctx.session.user.pId,   // 订单
+		dId:dId,
+		subId:subId, // 分库id
+		suId:body.suId, // 供应商
+		gId:body.gId, // 品类id
+		sId:body.sId, // 店库id
+		num:Number(body.num)
+	};
+	// 验证参数
 	for(let i in data){
 		ctx.assert(data[i], 400, "参数错误!",{details:{ i: "未定义"}});
 	}
-	data.remarks= body.remarks;
-	let id = ctx.params.id;
-	let res = await ctx.mongodb.db.collection('stocks').updateOne({_id:id,pId:ctx.session.user.pId},{$set:data});
-	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
-	ctx.body = res.result;
+	data.mode = body.mode;
+	data.date = body.date?new Date(body.date):new Date();
+	data.rem = body.rem || "";
+	let transData = {
+		_id:shortId.uuid(),
+		type:1, // 异动(添加)
+		s_id:subId,
+		s_c:"subStocks", // 源库
+		args:data,
+		d_id:ownerId,
+		d_c:"unuStocks", // 目标库
+		state:0 // initial
+	};
+	// 插入分库事务
+	let res = await ctx.mongodb.db.collection('transactions').insertOne(transData);
+	ctx.assert(res.insertedCount, 503, "服务器无法处理当前请求",{details:"不能执行的操作"});
+	ctx.body = {id:ownerId};
 });
-// 删除
-router.delete('/:id',async function (ctx, next) {
+
+// 修改分配
+router.put('/:dId/:id', async function (ctx, next) {
+	let body = ctx.request.body;
+	let dId = ctx.params.dId; // 订单id
 	let id = ctx.params.id;
-	let res = await ctx.mongodb.db.collection('stocks').deleteOne({_id:id,pId:ctx.session.user.pId});
-	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
-	ctx.body = res.result;
+	let data = {
+		num:Number(body.num)
+	};
+	// 验证参数
+	for(let i in data){
+		ctx.assert(data[i], 400, "客户端参数错误!",{details:i+" 未提供"});
+	}
+	data["rem"] = body.rem || "";
+	let transData = {
+		_id:shortId.uuid(),
+		type:2, // 修改分库
+		s_id:dId,
+		s_c:"stocks", // 源库
+		args:data,
+		d_id:id,
+		d_c:"subStocks", // 目标库
+		state:0 // initial
+	};
+	// 插入分库事务
+	let res = await ctx.mongodb.db.collection('transactions').insertOne(transData);
+	ctx.assert(res.insertedCount, 503, "服务器无法处理当前请求",{details:"不能执行的操作"});
+	ctx.body = res.insertedCount;
+});
+// 修改异动
+router.put('/unusual/:subId/:id', async function (ctx, next) {
+	let body = ctx.request.body;
+	let id = ctx.params.id; // 异动id
+	let subId = ctx.params.subId; // 分库id
+	let data = {
+		num:Number(body.num)
+	};
+	// 验证参数
+	for(let i in data){
+		ctx.assert(data[i], 400, "客户端参数错误!",{details:i+" 未提供"});
+	}
+	data["rem"] = body.rem || "";
+	let transData = {
+		_id:shortId.uuid(),
+		type:2, // 修改异动
+		s_id:subId,
+		s_c:"subStocks", // 源库
+		args:data,
+		d_id:id,
+		d_c:"unuStocks", // 目标库
+		state:0 // initial
+	};
+	// 插入事务
+	let res = await ctx.mongodb.db.collection('transactions').insertOne(transData);
+	ctx.assert(res.insertedCount, 503, "服务器无法处理当前请求",{details:"不能执行的操作"});
+	ctx.body = res.insertedCount;
+});
+
+// 删除分库
+router.delete('/:dId/:id',async function (ctx, next) {
+	let dId = ctx.params.dId;// 订单id
+	let id = ctx.params.id;
+	let transData = {
+		_id:shortId.uuid(),
+		type:3, // 删除分库
+		s_id:dId,
+		s_c:"stocks", // 源库
+		d_id:id,
+		d_c:"subStocks", // 目标库
+		state:0 // initial
+	};
+	// 插入事务
+	let res = await ctx.mongodb.db.collection('transactions').insertOne(transData);
+	ctx.assert(res.insertedCount, 503, "服务器无法处理当前请求",{details:"不能执行的操作"});
+	ctx.body = res.id;
+});
+// 删除异动
+router.delete('/unusual/:subId/:id/',async function (ctx, next) {
+	let id = ctx.params.id;
+	let subId = ctx.params.subId;
+	let transData = {
+		_id:shortId.uuid(),
+		type:3, // 删除分库
+		s_id:subId,
+		s_c:"subStocks", // 源库
+		d_id:id,
+		d_c:"unuStocks", // 目标库
+		state:0 // initial
+	};
+	// 插入事务
+	let res = await ctx.mongodb.db.collection('transactions').insertOne(transData);
+	ctx.assert(res.insertedCount, 503, "服务器无法处理当前请求",{details:"不能执行的操作"});
+	ctx.body = id;
 });
 module.exports = router;

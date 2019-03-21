@@ -13,11 +13,11 @@ router.prefix('/customers');
 // 返回用户页面
 router.get('/',  async function (ctx, next) {
 	await ctx.render('customers', {
-		title:"商品种类管理",theme:ctx.session.user.theme
+		title:"客户管理",theme:ctx.session.user.theme
 	});
 });
 // 获得信息
-router.get('/list',  async function (ctx, next) {
+router.get('/lists',  async function (ctx, next) {
 	// let query = ctx.request.query;
 	let  where={pId:ctx.session.user.pId};
 	let projection={};
@@ -50,14 +50,11 @@ router.get('/options',  async function (ctx, next) {
 router.post('/',async function (ctx, next) {
 	let body = ctx.request.body;
 	// 验证参数
-	ctx.assert(body.name, 400, "参数错误!",{details:{ name: "undefined"}});
-	// if(ctx.session.user.right.indexOf(0)==-1){
-	// 	ctx.assert(body.shop, 400, "参数错误!",{details:{ shop: "undefined"}});
-	// }
+	ctx.assert(body.name, 400, "参数错误!",{details:"名称未定义"});
 	let res = await ctx.mongodb.db.collection('customers').insertOne({_id:body._id, name:body.name,
 		company:body.company,address:body.address,telephone:body.telephone,remarks:body.remarks,
 		pId: ctx.session.user.pId});
-	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
+	ctx.assert(res.insertedCount, 503, "服务器无法处理当前请求",{details:"无法执行"});
 	ctx.body = {id:res.insertedId};
 });
 router.put('/', async function (ctx, next) {
@@ -67,19 +64,19 @@ router.put('/', async function (ctx, next) {
 router.put('/:id', async function (ctx, next) {
 	let body = ctx.request.body;
 	// 验证参数
-	ctx.assert(body.name, 400, "参数错误!",{details:{ name: "未定义"}});
+	ctx.assert(body.name, 400, "参数错误!",{details:"名称未定义"});
 	let id = ctx.params.id;
 	let res = await ctx.mongodb.db.collection('customers').updateOne({_id:id},
 		{$set:{name:body.name,company:body.company,address:body.address,
 				telephone:body.telephone,remarks:body.remarks}});
-	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
-	ctx.body = res.result;
+	ctx.assert(res.modifiedCount, 503, "服务器无法处理当前请求",{details:"无法执行"});
+	ctx.body = res.modifiedCount;
 });
 // 删除
 router.delete('/:id',async function (ctx, next) {
 	let id = ctx.params.id;
 	let res = await ctx.mongodb.db.collection('customers').deleteOne({_id:id});
-	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
-	ctx.body = res.result;
+	ctx.assert(res.deletedCount, 503, "服务器无法处理当前请求",{details:"无法执行"});
+	ctx.body = res.deletedCount;
 });
 module.exports = router;

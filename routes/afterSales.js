@@ -49,7 +49,7 @@ function formatData(field,dd) {
 // 返回用户页面
 router.get('/',  async function (ctx, next) {
 	await ctx.render('afterSales', {
-		title:"销售审核",theme:ctx.session.user.theme
+		title:"退换修服务",theme:ctx.session.user.theme
 	});
 });
 // 获得信息
@@ -176,13 +176,27 @@ router.get('/lists/:id',  async function (ctx, next) {
 	ctx.body = ret;
 });
 // 退换货
-router.delete('/:id', async function (ctx, next) {
+router.put('/:id', async function (ctx, next) {
+	let body = ctx.request.body;
 	let id = ctx.params.id;
-	let res = await ctx.mongodb.db.collection('sales').findAndModify({_id:id},[],{},{remove:true,new:false});
-	ctx.assert(res.ok, 503, "服务器无法处理当前请求",{details:{ result: res.ok}});
-	for (let i =0,len = res.value.lists?res.value.lists.length:0;i<len;i++){
-		await ctx.mongodb.db.collection('stocks').update({_id:res.value.lists[i].pId},{$inc:{sNum:-res.value.lists[i].num}});
+	if(body.afterMode == 1){
+		let data = {
+			_id:body._id,
+			gId:body.gId,
+			remarks:body.remarks,
+			date:new Date()
+		};
+		let res = await ctx.mongodb.db.collection('sales').updateOne({_id:id,pId:ctx.session.user.pId},{$addToSet:{after:data}},{upsert:true});
+		ctx.assert(res.result.nModified, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
+		ctx.body = res.result.nModified;
+	}else{
+		let res = await ctx.mongodb.db.collection('sales').findAndModify({_id:id},[],{},{remove:true,new:false});
+		ctx.assert(res.ok, 503, "服务器无法处理当前请求",{details:{ result: res.ok}});
+		for (let i =0,len = res.value.lists?res.value.lists.length:0;i<len;i++){
+			await ctx.mongodb.db.collection('stocks').update({_id:res.value.lists[i].pId},{$inc:{sNum:-res.value.lists[i].num}});
+		}
+		ctx.body = res.ok;
 	}
-	ctx.body = res.ok;
+
 });
 module.exports = router;

@@ -91,3 +91,9 @@ var common = {
 		});
 	}
 };
+function weekIndexInMonth (date) {
+	var date = new Date(date),
+		w = date.getDay(),
+		d = date.getDate();
+	return Math.ceil((d + 6 - w) / 7);
+}

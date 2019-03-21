@@ -1,180 +1,362 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<link type="text/css" href="jQuery-Timepicker-Addon/1.6.3/css/jquery-ui-timepicker-addon.css" rel="stylesheet"/>
-	<link rel="stylesheet" type="text/css" href="jqGrid/css/ui.jqgrid.css" />
-	<link rel="stylesheet" href="select2/css/select2.css" />
-	<link rel="stylesheet" type="text/css"  href="themes/<%= theme %>/jquery-ui.min.css" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <link rel="stylesheet" type="text/css" href="/jQuery-Timepicker-Addon/1.6.3/css/jquery-ui-timepicker-addon.css" rel="stylesheet"/>
+    <link rel="stylesheet" type="text/css" href="/jqGrid/css/ui.jqgrid.css"/>
+    <link rel="stylesheet" type="text/css" href="/select2/css/select2.css"/>
+    <link rel="stylesheet" type="text/css" href="/themes/<%= theme %>/jquery-ui.min.css"/>
 
-	<script type="text/javascript" src="js/jquery-3.3.1.min.js"></script>
-	<script type="text/javascript" src="jqGrid/js/grid.locale-cn.js"></script>
-	<script type="text/javascript" src="jqGrid/js/jquery.jqGrid.js"></script>
-	<script type="text/javascript" src="js/jquery-ui.js"></script>
-	<script type="text/javascript" src="select2/js/pinyin.min.js" ></script>
-	<script type="text/javascript" src="select2/js/select2.full.js" ></script>
-	<script type="text/javascript" src="select2/js/zh-CN.js" ></script>
-	<script type="text/javascript" src="jQuery-Timepicker-Addon/1.6.3/js/jquery-ui-timepicker-addon.js"></script>
-	<script type="text/javascript" src="jQuery-Timepicker-Addon/1.6.3/js/jquery-ui-timepicker-zh-CN.js"></script>
-	<script type="text/javascript" src="js/jsNodeId.js"></script>
-	<script type="text/javascript" src="js/index.js"></script>
-	<style type="text/css">
-		* {
-			margin: 0;
-			padding: 0;
-			font-size: small;
-		}
-		html,body{
-		//overflow-x:hidden;
-			-ms-overflow-style: scrollbar;
-			height: 100%;
-			box-sizing: border-box;
-		}
-	</style>
+    <script type="text/javascript" src="/js/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="/jqGrid/js/grid.locale-cn.js"></script>
+    <script type="text/javascript" src="/jqGrid/js/jquery.jqGrid.js"></script>
+    <script type="text/javascript" src="/js/jquery-ui.js"></script>
+    <script type="text/javascript" src="/select2/js/pinyin.min.js"></script>
+    <script type="text/javascript" src="/select2/js/select2.full.js"></script>
+    <script type="text/javascript" src="/select2/js/zh-CN.js"></script>
+    <script type="text/javascript" src="/jQuery-Timepicker-Addon/1.6.3/js/jquery-ui-timepicker-addon.js"></script>
+    <script type="text/javascript" src="/jQuery-Timepicker-Addon/1.6.3/js/jquery-ui-timepicker-zh-CN.js"></script>
+    <script type="text/javascript" src="/js/jsNodeId.js"></script>
+    <script type="text/javascript" src="/js/index.js"></script>
+    <style type="text/css">
+        * {
+            margin: 0;
+            padding: 0;
+            font-size: small;
+        }
+
+        html, body {
+            /*overflow-x: hidden;*/
+            -ms-overflow-style: scrollbar;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        .form-control {
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            /*background-color: #fff;*/
+            background-clip: padding-box;
+            border-radius: 0.25rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+    </style>
 </head>
 <body>
-<div id="list_1" style="padding:5px;">
-	<table id="list"></table>
-	<div id="pager"></div>
+<div id="list_1" style="padding:5px;height: 100%;box-sizing: border-box;">
+    <table id="list"></table>
+    <div id="pager"></div>
+</div>
+<div id="dialog-message" style="display: none;" title="信息提示">
+    <p id="info"></p>
+</div>
+<div id="stocksTransfer" style="display: none;overflow: visible!important;" title="信息提示">
+    <form id="dialogForm" method="post" action="user/add">
+        <table>
+            <tr >
+                <td>店库：</td>
+                <td>
+                    <select id="unShop" name="unMode" placeholder="请选择方式" class="form-control ui-widget ui-widget-content ui-corner-all">
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>数量：</td>
+                <td>
+                    <input id="unNum" name="unNum" type="number" step="1"  value="1" type="text" class="form-control ui-corner-all ui-widget ui-widget-content" required/>
+                </td>
+            </tr>
+        </table>
+    </form>
 </div>
 <script type="text/javascript">
-	$(function(){
-		$(window).resize(function(){
+	$('#unShop').select2({
+		dropdownParent: $('#stocksTransfer'),
+		language: "zh-CN",
+		placeholder: {
+			id: '-1', // the value of the option
+			text: '请选择一个选项'
+		},
+		allowClear: true
+	});
+    $("#unMode").on('change',function () {
+	    alert($(this).children('option:selected').val());
+    });
+	$("#dialog-message").dialog({
+		autoOpen: false,
+		modal: true,
+		overlay: {
+			backgroundColor: '#000',
+			opacity: 0.3
+		},
+		buttons: {
+			'关闭': function () {
+				$(this).dialog("close");
+			}
+		}
+	});
+	$("#stocksTransfer").dialog({
+		modal: true,
+		autoOpen: false,
+		title:'库存调动',
+		overlay: {
+			backgroundColor: '#000',
+			opacity: 0.3
+		},
+		buttons:{
+			"确定":function(){
+				var form = $("#dialogForm");
+				var data = {};
+				data._id = jsShortId.gen(15);
+				data.stocksId = $('#list').jqGrid('getGridParam', 'selrow');
+				data.mode = $('#unMode').val();
+				data.num =$('#unNum').val();
+				if($("#unShop").parent().parent().is(':visible')){
+                    var from= $('#unNum').data('from');
+					data.fromId = from.id;
+					data.toId = $('#unShop').val();
+                }
+				runAjax('put','/stocks/unusual',data,function (err,result) {
+					if(!err){
+						$("#stocksTransfer").dialog("close");
+						if(0==$('#unMode').val()){
+							// var rowData = $('#list').jqGrid('getRowData', sId);
+							// var exit = rowData.num -$("#unNum").val();
+							// rowData.num = $("#unNum").val();
+							// rowData.mode = 1;
+							// rowData.remarks="";
+							// $("#list").jqGrid("addRowData", id, rowData, "first");
+							// $("#list").jqGrid("setCell", sId, "num", exit);
+						}
+					}
+				});
+			},
+			"取消": function() {
+				$("#stocksTransfer").dialog("close");
+			}
+		}
+	});
+	$(function () {
+		$(window).resize(function () {
 			$(window).unbind("onresize");
-			var winWh = pageSize();
 			$("#list").jqGrid('setGridWidth', $("#list_1").width());//.jqGrid('setGridHeight', winWh.WinH-86);
 			$(window).bind("onresize", this);
 		});
 	});
-	// $.fn.select2.defaults.theme_default = "jquery-ui";
-	$(document).ready(
-		function() {
-			// $.fn.select2.defaults.set("theme", "<%= theme %>");
-			jQuery("#list").jqGrid({
-				//url:'/stocks/lists',
-				datatype: "json",
-				//dataType:'local',
-				// editurl: 'clientArray',
-				mtype : "GET",
-				// postData:{'keyword':encodeURI(encodeURI(keyword))},
-				// loadonce:true,
-				shrinkToFit:true,
-				height: 'auto',
-				width:"100%",
-				autowidth:true,
-				colModel:[
-					{label:'ID', name:'_id',index:'_id', hidden:true,editable : false}, //width:60,
-					{label:'日期',name:'date',index:'date',editor:"text",edittype:"text",editable : true,
-						formatter:function (cellvalue, options, rowObject) {
-							return (new Date(cellvalue)).format("yyyy-MM-dd hh:mm:ss");
-						},
-						editoptions: {dataInit: function (elem) {$(elem).datetimepicker({
-								defaultDate:+1,
+	$(document).ready(function () {
+		jQuery("#list").jqGrid({
+			datatype: "json",
+			mtype: "GET",
+			shrinkToFit: true,
+			height:  'auto',
+			width: "100%",
+			autowidth: true,
+			colModel: [
+				{label: 'ID', name: '_id', index: '_id',
+                    hidden: true, editable: false}, //width:60,
+				{label: '日期', name: 'date', index: 'date', editor: "text", edittype: "text", editable: true,
+					formatter: function (cellvalue, options, rowObject) {
+						return (new Date(cellvalue)).format("yyyy-MM-dd hh:mm:ss");
+					},
+					editoptions: {
+						dataInit: function (elem) {
+							$(elem).datetimepicker({
+								defaultDate: +1,
 								dateFormat: "yy-mm-dd",
 								showSecond: true,
-								changeYear:true,
-								changeMonth:true,
+								changeYear: true,
+								changeMonth: true,
 								timeFormat: 'HH:mm:ss',
 								stepHour: 1,
 								stepMinute: 1,
 								stepSecond: 1
 							});
-								if($(elem).val()==''){
-									$(elem).datetimepicker('setDate',new Date());
-								}
+							if ($(elem).val() == '') {
+								$(elem).datetimepicker('setDate', new Date());
 							}
-						},editrules: {required: true},formoptions:{rowpos: 1, colpos: 3,
-							elmprefix:'<span style="color: red;">*</span>'
+						}
+					}, editrules: {required: true}, formoptions: {
+						elmprefix: '<span style="color: red;">*</span>'
+					},
+					searchoptions: {
+						dataInit: function (elem) {
+							$(elem).datetimepicker({
+								// defaultDate:new Date(),
+								dateFormat: "yy-mm-dd",
+								showSecond: true,
+								changeYear: true,
+								changeMonth: true,
+								timeFormat: 'HH:mm:ss',
+								stepHour: 1,
+								stepMinute: 1,
+								stepSecond: 1
+							});
+							$(elem).datetimepicker('setDate', new Date());
 						},
-						searchoptions: {
-							dataInit: function (elem) {
-								$(elem).datetimepicker({
-									// defaultDate:new Date(),
-									dateFormat: "yy-mm-dd",
-									showSecond: true,
-									changeYear:true,
-									changeMonth:true,
-									timeFormat: 'HH:mm:ss',
-									stepHour: 1,
-									stepMinute: 1,
-									stepSecond: 1
-								});
-								$(elem).datetimepicker('setDate',new Date());
-							},
-							sopt: ["le", "ge"]
+						sopt: ["le", "ge"]
+					}
+				},
+				{label: '品类',
+					name: 'gId',
+					index: 'gId',
+					editor: "text",
+					formatter: "select",
+					edittype: "select",
+					editable: true,
+					editoptions: {
+						value: getGoodsOptions(),
+						dataInit: function (elem) {
+							$(elem).select2({
+								language: "zh-CN",
+								dropdownParent: $(elem).parent(),
+								placeholder: {
+									id: '-1', // the value of the option
+									text: '请选择一个选项'
+								},
+								allowClear: true,
+							});
 						}
 					},
-					{label:'供应商',name:'suId',index:'suId',editor:"text", formatter:"select",edittype:"select",editable : true,
-						editoptions: {
-							value: getSupplierOptions(),
-							dataInit: function (elem) {
-								$(elem).select2({
-									language: "zh-CN",
-									placeholder: {
-										id: '-1', // the value of the option
-										text: '请选择一个选项'
-									},
-									allowClear: true,
-								});
-							}
-						},editrules: {required: true}, formoptions:{rowpos: 1, colpos: 1,
-							elmprefix:'<span style="color: red;">*</span>'},
-						stype:'select',
-						searchoptions: {
-							value: getSupplierOptions(),
-							dataInit: function (elem) {
-								$(elem).select2({
-									language: "zh-CN",
-									placeholder: {
-										id: '-1', // the value of the option
-										text: '请选择一个选项'
-									},
-									allowClear: true,
-									// theme: "classic",
-								});
-							},
-							sopt: ["eq", "ne"]
+					editrules: {required: true},
+					formoptions: {
+						elmprefix: '<span style="color: red;">*</span>'
+					},
+					stype: 'select',
+					searchoptions: {
+						value: {},
+						dataInit: function (elem) {
+							$(elem).select2({
+								language: "zh-CN",
+								dropdownParent: $(elem).parent(),
+								placeholder: {
+									id: '-1', // the value of the option
+									text: '请选择一个选项'
+								},
+								allowClear: true,
+								// theme: "classic",
+							});
+							$(elem).select2("val",-1);
+						},
+						sopt: ["eq", "ne"]
+					}
+				},
+				{label: '供应商',
+					name: 'suId',
+					index: 'suId',
+					editor: "text",
+					formatter: "select",
+					edittype: "select",
+					editable: true,
+					editoptions: {
+						value: getSupplierOptions(),
+						dataInit: function (elem) {
+							$(elem).select2({
+								language: "zh-CN",
+                                dropdownParent: $(elem).parent(),
+								placeholder: {
+									id: '-1', // the value of the option
+									text: '请选择一个选项'
+								},
+								allowClear: true,
+							});
 						}
 					},
-					{label:'品类',name:'gId',index:'gId',editor:"text", formatter:"select",edittype:"select",editable : true,
-						editoptions: {
-							value: getGoodsOptions(),
-							dataInit: function (elem) {
-								$(elem).select2({
-									language: "zh-CN",
-									placeholder: {
-										id: '-1', // the value of the option
-										text: '请选择一个选项'
-									},
-									allowClear: true,
-								});
-							}
-						},editrules: {required: true},
-						formoptions:{rowpos: 1, colpos: 2,
-							elmprefix:'<span style="color: red;">*</span>'},
-						stype:'select',
-						searchoptions: {
-							value: getGoodsOptions(),
-							dataInit: function (elem) {
-								$(elem).select2({
-									language: "zh-CN",
-									placeholder: {
-										id: '-1', // the value of the option
-										text: '请选择一个选项'
-									},
-									allowClear: true,
-									// theme: "classic",
-								});
-							},
-							sopt: ["eq", "ne"]
-						}
+					editrules: {required: true},
+					formoptions: {
+						elmprefix: '<span style="color: red;">*</span>'
 					},
-					{label:'店铺',name:'sId',index:'sId',editor:"text", formatter:"select",edittype:"select",editable : true,
+					stype: 'select',
+					searchoptions: {
+						value: {},
+						dataInit: function (elem) {
+							$(elem).select2({
+								language: "zh-CN",
+                                dropdownParent: $(elem).parent(),
+								placeholder: {
+									id: '-1', // the value of the option
+									text: '请选择一个选项'
+								},
+								allowClear: true,
+								// theme: "classic",
+							});
+						},
+						sopt: ["eq", "ne"]
+					}
+				},
+				{label: '数量', name: 'iNum', index: 'iNum', editor: "text", editable: false, width: 60
+                    , search: false, sortable: false
+				},
+				{label: '库存', name: 'num', index: 'num', editor: "text", editable: false, width: 60,
+					search: false, sortable: false
+				},
+				{label: '备注', name: 'rem', index: 'rem', sortable: false, editable: true, search: false,
+                    edittype: "textarea", editoptions: {rows: "2", cols: "23"}, formoptions: {/*rowpos: 3, colpos: 3*/}}
+			],
+			sortname: '_id',
+			sortorder: 'desc',
+			viewrecords: true,
+			rowNum: 10,
+			rowList: [10, 20, 30],
+			pager: "#pager",
+			caption: "总库列表",
+			multiselect: false,
+			jsonReader: {
+				id: "_id",
+				root: "rows",
+				page: "page",
+				total: "total",
+				records: "records",
+				repeatitems: false
+			},
+			ajaxGridOptions:{
+				beforeSend:function (xhr) {
+					xhr.setRequestHeader('Authorization', 'test-value'); // 叠加式添加
+				}
+            },
+			subGrid: true,
+			subGridOptions: {
+				"plusicon": "ui-icon-triangle-1-e",
+                "minusicon": "ui-icon-triangle-1-s",
+				"openicon": "ui-icon-arrowreturn-1-e",
+				// load the subgrid data only once
+				// and the just show/hide
+				"reloadOnExpand": false,
+				// select the row when the expand column is clicked
+				"selectOnExpand": true
+		}, // 分库列表
+            subGridRowExpanded: function (subGrid_id, row_id) {
+			var subGrid_table_id, pager_id;
+			subGrid_table_id = subGrid_id + "_t";
+			pager_id = "p_" + subGrid_table_id;
+			$("#" + subGrid_id).html("<table id='" + subGrid_table_id + "' class='scroll'></table><div id='" + pager_id + "' class='scroll'></div>");
+			var options = {
+				url: '/stocks/subLists/' + row_id,
+				datatype: "json",
+				mtype: "GET",
+				shrinkToFit: true,
+				// toppager: true,
+				editable: true,
+				rownumbers: true,
+				deepempty: true,
+				height: 'auto', //auto
+				width: "600",
+				// autowidth: true, // sub
+				colModel: [
+                    {label: 'ID', name: '_id', index: '_id',
+                        hidden: true, editable: false}, //width:60,
+					{label: '店库',
+						name: 'sId',
+						index: 'sId',
+						editor: "text",
+						formatter: "select",
+						edittype: "select",
+						editable: true,
 						editoptions: {
 							value: getShopNames(),
 							dataInit: function (elem) {
 								$(elem).select2({
 									language: "zh-CN",
+									dropdownParent: $(elem).parent(),
 									placeholder: {
 										id: '-1', // the value of the option
 										text: '请选择一个选项'
@@ -183,14 +365,18 @@
 									// theme: "classic",
 								});
 							}
-						},editrules: {required: true},formoptions:{rowpos: 3, colpos: 1,
-							elmprefix:'<span style="color: red;">*</span>'},
-						stype:'select',
+						},
+						editrules: {required: true},
+						formoptions: {
+							elmprefix: '<span style="color: red;">*</span>'
+						},
+						stype: 'select',
 						searchoptions: {
-							value: getShopNames(),
+							value: {},
 							dataInit: function (elem) {
-								$(elem).css({ width: "100%" }).select2({
+								$(elem).css({width: "100%"}).select2({
 									language: "zh-CN",
+									dropdownParent: $(elem).parent(),
 									placeholder: {
 										id: '-1', // the value of the option
 										text: '请选择一个选项'
@@ -202,137 +388,414 @@
 							sopt: ["eq", "ne"]
 						}
 					},
-					{label:'数量',name:'num',index:'num',editor:"text", editable : true,width:60,
+					{label: '数量',
+						name: 'num',
+						index: 'num',
+						editor: "text",
+						editable: true,
+						formatter: "integer",
+						width: "80",
 						editrules: {required: true, integer: true},
-						formoptions:{rowpos: 2, colpos: 1,
-							elmprefix:'<span style="color: red;">*</span>'},search:false,sortable:false},
-					{label:'进价',name:'inPrice',index:'inPrice',editor:"text", editable : true,width:60,
-						editrules: {required: true, number: true},
-						formoptions:{rowpos: 2, colpos: 2 ,elmprefix:'<span style="color: red;">*</span>'},
-						search:false,sortable:false,
-						formatter:function(cellvalue, options, rowObject){
-							return typeof cellvalue == 'object'?cellvalue.$numberDecimal:(cellvalue?cellvalue:"0.00");//代替默认
-						}},
-					{label:'定价',name:'price',index:'price',editor:"text", editable : true,width:60,search:false,sortable:false,
-						editrules: {required: true, number: true},
-						formoptions:{rowpos: 2, colpos: 3 ,elmprefix:'<span style="color: red;">*</span>'},
-						formatter:function(cellvalue, options, rowObject){
-							return typeof cellvalue == 'object'?cellvalue.$numberDecimal:(cellvalue?cellvalue:"0.00");//代替默认
-						}},
-					{label:'备注',name:'remarks',index:'remarks',sortable : false,editable : true,search:false,
-						edittype : "textarea",formoptions:{rowpos: 3, colpos: 2},editoptions : {rows : "2",cols : "20"}}
+						editoptions: {defaultValue: '1'},
+						formoptions: {elmprefix: '<span style="color: red;">*</span>'}
+					},
+					{label: '备注', name: 'rem', index: 'rem', sortable: false, editable: true, search: false,
+						edittype: "textarea", editoptions: {rows: "2", cols: "23"}, formoptions: {/*rowpos: 3, colpos: 3*/}}
 				],
-				sortname:'_id',
-				sortorder:'desc',
-				viewrecords:true,
-				rowNum:10,
-				rowList:[10,20,30],
-				pager:"#pager",
-				// caption: "<%= title %>",
+				sortname: '_id',
+				sortorder: 'asc',
+				viewrecords: true,
+				rowNum: -1,
+				pager: "#" + pager_id,
+				caption: "分库列表",
 				multiselect: false,
 				jsonReader: {
 					id: "_id",
-					root : "rows",
-					page:"page",
-					total:"total",
-					records:"records",
+					root: "rows",
+					page: "page",
+					total: "total",
+					records: "records",
 					repeatitems: false
 				},
-				loadComplete:function(xhr){
+				loadComplete: function (xhr) {
+				},
+				ajaxGridOptions:{
+					beforeSend:function (xhr) {
+						xhr.setRequestHeader('Authorization', 'test-value'); // 叠加式添加
+					}
+				},
+				subGrid: true,
+				subGridOptions: {
+					"plusicon": "ui-icon-triangle-1-e",
+					"minusicon": "ui-icon-triangle-1-s",
+					"openicon": "ui-icon-arrowreturn-1-e",
+					// load the subgrid data only once
+					// and the just show/hide
+					"reloadOnExpand": false,
+					// select the row when the expand column is clicked
+					"selectOnExpand": true
+				},
+				subGridRowExpanded: function (subGrid_id2, row_id2) { // sub2
+					var subGrid_table_id2, pager_id2;
+					subGrid_table_id2 = subGrid_id2 + "_t";
+					pager_id2 = "p_" + subGrid_table_id2;
+					$("#" + subGrid_id2).html("<table id='" + subGrid_table_id2 + "' class='scroll'></table><div id='" + pager_id2 + "' class='scroll'></div>");
+					jQuery("#" + subGrid_table_id2).jqGrid({
+						url: '/stocks/lists/' + row_id +'/' + row_id2,
+						datatype: "json",
+						mtype: "GET",
+						shrinkToFit: true,
+						// toppager: true,
+						editable: true,
+						rownumbers: true,
+						deepempty: true,
+						height: 'auto', //auto
+						width: "500",
+						// autowidth: true,
+						colModel: [
+							{label: 'ID', name: '_id', index: '_id',
+								hidden: true, editable: false}, //width:60,
+							{label: '品类',
+								name: 'gId',
+								index: 'gId',
+								editor: "text",
+								formatter: "select",
+								edittype: "select",
+								hidden: true,
+								editable: false,
+								editoptions: {
+									value: getGoodsOptions(),
+									dataInit: function (elem) {
+										$(elem).select2({
+											language: "zh-CN",
+											dropdownParent: $(elem).parent(),
+											placeholder: {
+												id: '-1', // the value of the option
+												text: '请选择一个选项'
+											},
+											allowClear: true,
+										});
+									}
+								}
+							},
+							{label:'原因',name:'mode',index:'mode',editor:"text",width:80, editable : true,search:false,formatter:"select",edittype:"select",
+								editoptions: {
+									value: {1:'损耗',2:'自用',3:'退货',4:'其他'}
+								},editrules: {required: true}, formoptions: {
+									elmprefix: '<span style="color: red;">*</span>'
+								}
+							},
+							{label: '数量',
+								name: 'num',
+								index: 'num',
+								editor: "text",
+								editable: true,
+								formatter: "integer",
+								width: "80",
+								editrules: {required: true, integer: true},
+								editoptions: {defaultValue: '1'},
+								formoptions: {elmprefix: '<span style="color: red;">*</span>'}
+							},
+							{label: '日期', name: 'date', index: 'date', editor: "text", edittype: "text", editable: true,
+								formatter: function (cellvalue, options, rowObject) {
+									return (new Date(cellvalue)).format("yyyy-MM-dd hh:mm:ss");
+								},
+								editoptions: {
+									dataInit: function (elem) {
+										$(elem).datetimepicker({
+											defaultDate: +1,
+											dateFormat: "yy-mm-dd",
+											showSecond: true,
+											changeYear: true,
+											changeMonth: true,
+											timeFormat: 'HH:mm:ss',
+											stepHour: 1,
+											stepMinute: 1,
+											stepSecond: 1
+										});
+										if ($(elem).val() == '') {
+											$(elem).datetimepicker('setDate', new Date());
+										}
+									}
+								}, editrules: {required: true}, formoptions: {
+									elmprefix: '<span style="color: red;">*</span>'
+								}
+							},
+							{label: '备注', name: 'rem', index: 'rem', sortable: false, editable: true, search: false,
+								edittype: "textarea", editoptions: {rows: "2", cols: "23"}, formoptions: {/*rowpos: 3, colpos: 3*/}}
+						],
+						sortname: '_id',
+						sortorder: 'asc',
+						viewrecords: true,
+						rowNum: -1,
+						pager: "#" + pager_id2,
+						caption: "异动列表",
+						multiselect: false,
+						jsonReader: {
+							id: "_id",
+							root: "rows",
+							page: "page",
+							total: "total",
+							records: "records",
+							repeatitems: false
+						},
+						loadComplete: function (xhr) {
+						},
+						ajaxGridOptions:{
+							beforeSend:function (xhr) {
+								xhr.setRequestHeader('Authorization', 'test-value'); // 叠加式添加
+							}
+						}
+					});
+					// sub2 操作
+					jQuery("#" + subGrid_table_id2).jqGrid('navGrid', '#' + pager_id2, {add: true,edit: true,del: true,
+							search: false, refresh: false},
+						{checkOnSubmit: false, closeAfterEdit: true, reloadAfterSubmit: false, modal: true,
+							url: "/stocks/" + row_id + "/" + row_id2,
+							mtype: "put",
+							errorTextFormat:errorTextFormat,
+							beforeShowForm: function (form) {
+								return [true, ''];
+							},
+							onclickSubmit: function (params, postData) {
+								params.url = "/stocks/unusual/"  + row_id2 + '/' + postData[subGrid_table_id2 + '_id'];
+								return [true, ''];
+							},
+							beforeSubmit: function (postData, formid) {
+								var oldNum= $("#" + subGrid_table_id2).jqGrid("getCell", postData[subGrid_table_id2 + '_id'], "num");
+								var subNum = $("#" + subGrid_table_id).jqGrid("getCell", row_id2,'num');
+								if(subNum < postData.num - oldNum){
+									return [false,"分配量过多"];
+								}
+								return [true, ''];
+							},
+							afterSubmit: function (response, postData) {
+                                var oldNum= $("#" + subGrid_table_id2).jqGrid("getCell", postData[subGrid_table_id2 + '_id'], "num");
+                                var subNum = $("#" + subGrid_table_id).jqGrid("getCell", row_id2,'num');
+                                $("#" + subGrid_table_id).jqGrid("setCell", row_id, "num", subNum -(postData.num - oldNum));
+								return [true, ''];
+							}
+						},  // edit sub2
+						{checkOnSubmit: false,
+							closeAfterAdd: true,
+							reloadAfterSubmit: false,
+							modal: true,
+							jqModal: true,
+							addedrow: 'first',
+							url: "/stocks/" + row_id + '/' + row_id2,
+							mtype: "post",
+							errorTextFormat:errorTextFormat,
+							beforeShowForm: function (form) {
+							},
+							onclickSubmit: function (params, postData) {
+								return [true, ''];
+							},
+							beforeSubmit: function (postData, formid) {
+								var stockData = $("#" + subGrid_table_id).jqGrid('getRowData', row_id2);
+								if (postData.num > stockData.num) {
+									return [false, "超过了库存余量!"];
+								}
+								postData.sId  = $("#" + subGrid_table_id).jqGrid('getCell',row_id2,'sId');
+								postData.gId = $('#list').jqGrid('getCell',row_id,'gId');
+								postData.suId = $('#list').jqGrid('getCell',row_id,'suId');
+								return [true, '']; //return [true, "", jqXhr.responseJSON.id];
+							},
+							afterSubmit: function (response, postData) {
+								var result=response.responseJSON;
+								// postData.id = result.id;
+								var subNum = $("#" + subGrid_table_id).jqGrid("getCell", row_id2, "num");
+                                $("#" + subGrid_table_id).jqGrid("setCell", row_id2, "num", subNum - postData.num);
+								return [true, "", result.id];
+							}
+						},// add sub2
+						{
+							checkOnSubmit: false, reloadAfterSubmit: false, modal: true,
+							url: "/stocks/" + row_id ,
+							mtype: "delete",
+							errorTextFormat:errorTextFormat,
+							onclickSubmit: function (params, id) {
+								params.url = "/stocks/unusual/" + row_id2 +"/" + id ;
+								return [true, ''];
+							},
+							beforeSubmit: function (id, formid) {
+
+								return [true, ''];
+							},
+							afterSubmit: function (response, postData) {
+								var num = $("#" + subGrid_table_id2).jqGrid('getCell', postData.id,"num");
+                                var subNum = $("#" + subGrid_table_id).jqGrid('getCell', row_id2,"num");
+								$("#" + subGrid_table_id).jqGrid("setCell", row_id2, "num",Number(subNum) + Number(num) );
+								return [true, ''];
+							}
+						}, // del sub2
+						{multipleSearch: true, closeAfterSearch: true} // search
+					);
 				}
-			});
-			jQuery("#list").jqGrid('navGrid','#pager', {add:true,edit:true,del:true,search:true,refresh:false},
-					{checkOnSubmit:false, closeAfterEdit: true,reloadAfterSubmit:false,modal: true,
-					url:"/stocks",
-					mtype:"put",
-					beforeShowForm : function(form) {
-						// form.find('#account').attr('readOnly',true);//把编辑框中的字段设置为只读的。
+			};
+			jQuery("#" + subGrid_table_id).jqGrid(options);
+			jQuery("#" + subGrid_table_id).jqGrid('navGrid', '#' + pager_id, {add: true,edit: true,del: true,
+					search: false, refresh: false},
+				{checkOnSubmit: false, closeAfterEdit: true, reloadAfterSubmit: false, modal: true,
+					url: "/stocks/" + row_id + "/",
+					mtype: "put",
+                    errorTextFormat:errorTextFormat,
+					beforeShowForm: function (form) {
+						return [true, ''];
 					},
-					onclickSubmit: function(params, postData) {
-						params.url = "/stocks/" + postData.list_id;
-						return [true,'']; // {add_data}
+					onclickSubmit: function (params, postData) {
+						params.url = "/stocks/" + row_id + '/' + postData[subGrid_table_id + '_id'];
+						return [true, ''];
 					},
-					beforeSubmit:function(postData, formid) {
-						return [true,''];
+					beforeSubmit: function (postData, formid) {
+                        var oldNum= $("#" + subGrid_table_id).jqGrid("getCell", postData[subGrid_table_id + '_id'], "num");
+						var stocksNum = $("#list").jqGrid("getCell", row_id,'num');
+                        if(postData.num - oldNum >  stocksNum ){
+                            return [false,"分配量过多"];
+                        }
+						return [true, ''];
 					},
-					afterSubmit:function(response, postData){
-						return [true,''];
-					}
-				}, // edit
-					{checkOnSubmit:false, closeAfterAdd: true,reloadAfterSubmit:false,modal: true,jqModal: true,addedrow:'last',
-					url:"/stocks",
-					mtype:"post",
-					onclickSubmit: function(params, postData) {
-						return [true,''];
-					},
-					beforeSubmit:function(postData, formid) {
-						postData._id = jsShortId.gen(15);
-						return [true,'']; //return [true, "", jqXhr.responseJSON.id];
-					},
-					afterSubmit:function(response, postData){
-						var result=response.responseJSON;
-						// postData._id = result.id;
-						return [true,"",result.id];
-					}
-				}, // add
-				{checkOnSubmit:false, reloadAfterSubmit:false,modal: true,
-					url:"/users",
-					mtype:"delete",
-					onclickSubmit: function(params, postData) {
-						params.url = "/users/" + postData;
-						return [true,''];
-					},
-					afterSubmit:function(response, postData) {
+					afterSubmit: function (response, postData) {
+                        var stocksNum = $("#list").jqGrid("getCell", row_id,'num');
+                        var oldNum= $("#" + subGrid_table_id).jqGrid("getCell", postData.id, "num");
+                        $("#list").jqGrid("setCell", row_id, "num", stocksNum - postData.num + Number(oldNum));
 						return [true, ''];
 					}
-				}, // del
-				{multipleSearch: true,closeAfterSearch: true,
-					beforeShowSearch:function(form) {
-						$("#list").jqGrid('setGridParam',{url:"/stocks/lists"});
-						return [true,""];
-					}} // search
-				);
+				},
+				{checkOnSubmit: false,
+					closeAfterAdd: true,
+					reloadAfterSubmit: false,
+					modal: true,
+					jqModal: true,
+					addedrow: 'first',
+                    url: "/stocks/" + row_id,
+					mtype: "post",
+                    errorTextFormat:errorTextFormat,
+					beforeShowForm: function (form) {
+					},
+					onclickSubmit: function (params, postData) {
+						return [true, ''];
+					},
+					beforeSubmit: function (postData, formid) {
+						var stockData = $("#list").jqGrid('getRowData', row_id);
+						if (Number(postData.num) > Number(stockData.num)) {
+							return [false, "配货量超过了库存余量!"];
+						}
+                        var rowDatas = $("#" + subGrid_table_id).jqGrid('getRowData');
+						for(var i =0;i<rowDatas.length;i++){
+						    if(postData.sId == rowDatas[i].sId){
+						        return [false,"已经分配,请不要重复分配"];
+                            }
+                        }
+						postData.gId = stockData.gId;
+						return [true, '']; //return [true, "", jqXhr.responseJSON.id];
+					},
+					afterSubmit: function (response, postData) {
+				    var result=response.responseJSON;
+						// postData.id = result.id;
+                        var socksNum = $("#list").jqGrid("getCell", row_id, "num");
+						$("#list").jqGrid("setCell", row_id, "num", Number(socksNum) - Number(postData.num));
+						return [true, "", result.id];
+					}
+				},
+				{
+					checkOnSubmit: false, reloadAfterSubmit: false, modal: true,
+					url: "/stocks/" + row_id ,
+					mtype: "delete",
+                    errorTextFormat:errorTextFormat,
+					onclickSubmit: function (params, id) {
+						params.url = "/stocks/" + row_id + "/" + id ;
+						return [true, ''];
+					},
+					beforeSubmit: function (id, formid) {
+						return [true, ''];
+                    },
+					afterSubmit: function (response, postData) {
+						var stocksNum = Number($("#list").jqGrid("getCell", row_id, "num"));
+						var num = $("#" + subGrid_table_id).jqGrid('getCell', postData.id,"num");
+						$("#list").jqGrid("setCell", row_id, "num",Number(stocksNum) + Number(num) );
+						return [true, ''];
+					}
+				},
+				{multipleSearch: true, closeAfterSearch: true} // search
+			).jqGrid('navButtonAdd', '#' + pager_id, { // sub un
+				caption: '',
+				title: '调库',
+				onClickButton: function () {
+					var sId = $("#" + subGrid_table_id).jqGrid('getGridParam', 'selrow');
+					if (!sId) {
+						$("#info").text('请选中列表中的条目!');
+						$("#dialog-message").dialog("open");
+						return;
+					}
+					$( "#stocksTransfer" ).dialog( "open" );
+				},
+			});
+		}
 		});
+		var values = $("#list").getColProp('suId').editoptions.value;
+		$("#list").jqGrid('setColProp', 'suId', {searchoptions: {value: values}});
+		values = $("#list").getColProp('gId').editoptions.value;
+		$("#list").jqGrid('setColProp', 'gId', {searchoptions: {value: values}});
+        // 总库查询操作
+		jQuery("#list").jqGrid('navGrid', '#pager', {add: false, edit: false, del: false, search: true, refresh: false},
+			{checkOnSubmit: false, closeAfterEdit: true, reloadAfterSubmit: false, modal: true,
+				url: "/stocks",
+				mtype: "put",
+                errorTextFormat:function(data){
+                    return "错误代码:"+ data.status+",信息:" + (data.responseText ||data.statusText) ;
+                },
+				beforeShowForm: function (form) {
+				},
+				onclickSubmit: function (params, postData) {
+					params.url = "/stocks/" + postData.list_id;
+					return [true, '']; // {add_data}
+				}
+			}, // edit
+			{}, // add
+			{}, // del
+			{multipleSearch: true, closeAfterSearch: true,
+                errorTextFormat:function(data){
+                    return "错误代码:"+ data.status+",信息:" + (data.responseText ||data.statusText);
+                },
+				beforeShowSearch: function (form) {
+					$("#list").jqGrid('setGridParam', {url: "/stocks/lists"});
+					return [true, ""];
+				}
+			} // search
+		);
+	});
+    function errorTextFormat(data){
+        return "错误代码:"+ data.status+",信息:" + (data.responseText ||data.statusText);
+    }
 	function getGoodsOptions() {
-		let data = "";
-		runAjax('get', '/goods/list', {}, function (err, result) {
+		let data = {};
+		runAjax('get', '/stocks/goodsLists', {}, function (err, result) {
 			if (!err) {
 				for (let i = 0; i < result.rows.length; i++) {
-					if (i != result.rows.length - 1) {
-						data += result.rows[i]._id + ":" + result.rows[i].name + ";";
-					} else {
-						data += result.rows[i]._id + ":" + result.rows[i].name;
-					}
+					data[result.rows[i]._id] = result.rows[i].name;
 				}
 			}
 		});
 		return data;
 	}
 	function getShopNames() {
-		let data = "";
-		runAjax('get','/shops/list',{},function (err,result) {
-			if(!err){
+		let data = {};
+		runAjax('get', '/stocks/shopsLists', {}, function (err, result) {
+			if (!err) {
 				for (let i = 0; i < result.rows.length; i++) {
-					if(i != result.rows.length - 1) {
-						data += result.rows[i]._id + ":" + result.rows[i].name + ";";
-					}else {
-						data += result.rows[i]._id + ":" + result.rows[i].name;
-					}
+					data[result.rows[i]._id] = result.rows[i].name;
+					$("#unShop").append("<option value='" + result.rows[i]._id + "'>" + result.rows[i].name + "</option>");
 				}
 			}
 		});
 		return data;
 	}
 	function getSupplierOptions() {
-		let data = "";
-		runAjax('get','/suppliers/list',{},function (err,result) {
-			if(!err){
+		let data = {};
+		runAjax('get', '/stocks/suppliersLists', {}, function (err, result) {
+			if (!err) {
 				for (let i = 0; i < result.rows.length; i++) {
-					if(i != result.rows.length - 1) {
-						data += result.rows[i]._id + ":" + result.rows[i].name + ";";
-					}else {
-						data += result.rows[i]._id + ":" + result.rows[i].name;
-					}
+					data[result.rows[i]._id] = result.rows[i].name;
 				}
 			}
 		});

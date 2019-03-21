@@ -9,7 +9,7 @@
  * login/logout：{token，reToken}
  **********************属性*********************/
 const router = require('koa-router')();
-router.prefix('/stocksUnusual');
+router.prefix('/unuStocks');
 
 // 查询条件转换
 function OpMap(op, data) {
@@ -51,7 +51,7 @@ function formatData(field,dd) {
 }
 // 返回页面
 router.get('/',  async function (ctx, next) {
-	await ctx.render('stocksUnusual', {
+	await ctx.render('unuStocks', {
 		title:"库存异动",theme:ctx.session.user.theme
 	});
 });
@@ -67,11 +67,11 @@ router.get('/lists',  async function (ctx, next) {
 	ret["rows"] = [];
 	if (eval(query._search.toLowerCase())) {
 		let filter = query.filters;
-		let  where={pId:ctx.session.user.account};
+		let  where={pId:ctx.session.user.pId};
 		if(ctx.session.user.shop){
-			where[shop]=ctx.session.user.shop;
+			where[sId]=ctx.session.user.shop;
 		}
-		let projection={};
+		let projection={list:0};
 		let sidx = query.sidx;
 		let sort = {};
 		sort[sidx] = query.sord == "asc"?1:-1;
@@ -109,7 +109,7 @@ router.get('/lists',  async function (ctx, next) {
 			let data = formatData(query.searchField,query.searchString);
 			where[query.searchField] = OpMap(query.searchOper,data);
 		}
-		let res = await ctx.mongodb.db.collection('stocks').find(where).project(projection);
+		let res = await ctx.mongodb.db.collection('unuStocks').find(where).project(projection);
 		let counts = await res.count();
 		res = await res.sort(sort).skip((page-1)*rows).limit(rows).toArray();
 		ret["total"] = Math.ceil(counts / rows); // 总页数
@@ -117,6 +117,37 @@ router.get('/lists',  async function (ctx, next) {
 		ret["rows"] = res;
 	}
 	ctx.body = ret;
+});
+router.get('/lists/:id',  async function (ctx, next) {
+	// let query = ctx.request.query;
+	let id = ctx.params.id;
+	let  where={pId:ctx.session.user.pId,_id:id};
+	let res = await ctx.mongodb.db.collection('stocks').find(where).project({_id:0,lists:1}).toArray();
+	ctx.body = res.length >0? res[0].lists:[];
+});
+// goods信息
+router.get('/goodsLists',  async function (ctx, next) {
+	// let query = ctx.request.query;
+	let  where={pId:ctx.session.user.pId};
+	let projection={};
+	let res = await ctx.mongodb.db.collection('goods').find(where).project(projection).toArray();
+	ctx.body = {rows:res};
+});
+// 商店
+router.get('/shopsLists',  async function (ctx, next) {
+	// let query = ctx.request.query;
+	let  where={pId:ctx.session.user.pId};
+	let projection={};
+	let res = await ctx.mongodb.db.collection('shops').find(where).project(projection).toArray();
+	ctx.body = {rows:res};
+});
+// 供应商
+router.get('/suppliersLists',  async function (ctx, next) {
+	// let query = ctx.request.query;
+	let  where={pId:ctx.session.user.pId};
+	let projection={};
+	let res = await ctx.mongodb.db.collection('suppliers').find(where).project(projection).toArray();
+	ctx.body = {rows:res};
 });
 // 添加
 router.post('/',async function (ctx, next) {

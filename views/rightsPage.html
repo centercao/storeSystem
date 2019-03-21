@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<link rel="stylesheet" type="text/css" href="/jqGrid/css/ui.jqgrid.css"/>
+	<link rel="stylesheet" type="text/css" href="/themes/<%= theme %>/jquery-ui.min.css"/>
+
+	<script type="text/javascript" src="/js/jquery-3.3.1.min.js"></script>
+	<script type="text/javascript" src="/jqGrid/js/grid.locale-cn.js"></script>
+	<script type="text/javascript" src="/jqGrid/js/jquery.jqGrid.js"></script>
+	<script type="text/javascript" src="/js/jquery-ui.js"></script>
+	<script type="text/javascript" src="/js/jsNodeId.js"></script>
+	<script type="text/javascript" src="/js/index.js"></script>
+	<style type="text/css">
+		* {
+			margin: 0;
+			padding: 0;
+			font-size: small;
+		}
+	</style>
+</head>
+<body>
+<table id="list"></table>
+<div id="pager"></div>
+<script type="text/javascript">
+	$(function(){
+		$(window).resize(function(){
+			$(window).unbind("onresize");
+			$("#list").jqGrid('setGridWidth', $(window).width());//.jqGrid('setGridHeight', winWh.WinH-86);
+			$(window).bind("onresize", this);
+		});
+	});
+	$(document).ready(function() {
+			jQuery("#list").jqGrid({
+				url:'/users/rightsItems/' + GetQueryString('id'), //
+				datatype: "json",
+				/*dataType:'local',*/
+				mtype : "GET",
+				// postData:{'keyword':encodeURI(encodeURI(keyword))},
+				// loadonce:true,
+				shrinkToFit:true,
+				height: 'auto',
+				width:"100%",
+				autowidth:true,
+				colModel:[
+					{label:'ID', name:'_id',index:'_id', hidden:true,editable : false}, //width:60,
+					{label:'权限',name:'name',index:'name',editor:"text", editable : true},
+					{label:'选择',name : 'right',index : 'right',width : 80,editable : true,sortable : false,
+						formatter:function(cellvalue, options, rowObject){
+						var $check ='';
+						if(cellvalue == 1){
+							$check = '<input checked type="checkbox" onclick=SettingPermissions(this,"' +
+									rowObject._id +'"); />';
+						}else{
+							$check = '<input type="checkbox" onclick=SettingPermissions(this,"' +
+									rowObject._id +'"); />';
+						}
+						return $check;
+						},
+						unformat:function ( cellvalue, options, cell ) {
+							return $('input',cell).val();
+						}}
+				],
+				sortname:'_id',
+				sortorder:'asc',
+				viewrecords:true,
+				rowNum:-1,
+				pager:"#pager",
+				caption: "<%= title %>",
+				multiselect: false,
+				jsonReader: {
+					id: "_id",
+					root : "rows",
+					page:"page",
+					total:"total",
+					records:"records",
+					repeatitems: false
+				},
+				loadComplete:function(xhr){
+				}
+			});
+			jQuery("#list").jqGrid('navGrid','#pager',{add:false,edit:false,del:false,search:false,refresh:false});
+		});
+	function SettingPermissions($this,el) {
+		var check = $this.checked?1:0;
+		runAjax("put", "/users/" + GetQueryString('id') + "/right",{id:el,check:check},function (err) {
+			if(!err){
+				$this.checked?($this.checked =false):($this.checked =true);
+			}
+		});
+	}
+</script>
+</body>
+</html>

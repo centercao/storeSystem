@@ -10,21 +10,22 @@
  **********************属性*********************/
 const router = require('koa-router')();
 router.prefix('/sales');
+const shortId=require('jsnodeid');
 function OpMap(op, data) {
 	switch (op) {
-		case 'eq':
+		case 'eq': // 等于
 			return {$eq:data};
-		case 'ne':
+		case 'ne': // 不等于
 			return {$ne: data};
-		case 'lt':
+		case 'lt': // 小于
 			return {$lt: data};
-		case 'le':
+		case 'le': // 小于等于
 			return {$lte: data};
-		case 'gt':
+		case 'gt': // 大于
 			return {$gt: data};
-		case 'ge':
+		case 'ge': // 大于等于
 			return {$gte: data};
-		case 'bw': {
+		case 'bw': { // 开头是
 			let regExp = new RegExp("^" + data);
 			return regExp;
 		}
@@ -64,9 +65,9 @@ router.get('/lists',  async function (ctx, next) {
 	ret["rows"] = [];
 	if (eval(query._search.toLowerCase())) {
 		let filter = query.filters;
-		let  where={pId:ctx.session.user.account,audit:{$lte : 1}};
+		let  where={pId:ctx.session.user.pId,audit:{$lte : 1},oId:ctx.session.user.account};
 		if(ctx.session.user.shop){
-			where[shop]=ctx.session.user.shop;
+			where[sId]=ctx.session.user.shop;
 		}
 		let projection={lists:0};
 		let sidx = query.sidx;
@@ -118,6 +119,47 @@ router.get('/lists',  async function (ctx, next) {
 	}
 	ctx.body = ret;
 });
+// 客户信息
+router.get('/customers/lists',  async function (ctx, next) {
+    // let query = ctx.request.query;
+    let  where={pId:ctx.session.user.pId};
+    let projection={};
+    let res = await ctx.mongodb.db.collection('customers').find(where).project(projection).toArray();
+    ctx.body = {rows:res};
+})
+// 品类信息
+router.get('/goods/lists',  async function (ctx, next) {
+    // let query = ctx.request.query;
+    let  where={pId:ctx.session.user.pId};
+    let projection={};
+    let res = await ctx.mongodb.db.collection('goods').find(where).project(projection).toArray();
+    ctx.body = {rows:res};
+});
+// 店库信息
+router.get('/shops/lists',  async function (ctx, next) {
+    // let query = ctx.request.query;
+    let  where={pId:ctx.session.user.pId};
+    let projection={};
+    let res = await ctx.mongodb.db.collection('shops').find(where).project(projection).toArray();
+    ctx.body = {rows:res};
+});
+// 供应商
+router.get('/suppliers/lists',  async function (ctx, next) {
+    // let query = ctx.request.query;
+    let  where={pId:ctx.session.user.pId};
+    let projection={};
+    let res = await ctx.mongodb.db.collection('suppliers').find(where).project(projection).toArray();
+    ctx.body = {rows:res};
+});
+// 运输
+router.get('/transport/lists',  async function (ctx, next) {
+	// let query = ctx.request.query;
+	let  where={pId:ctx.session.user.pId};
+	let projection={};
+	let res = await ctx.mongodb.db.collection('transport').find(where).project(projection).toArray();
+	ctx.body = {rows:res};
+});
+// 销售详细列表
 router.get('/lists/:id',  async function (ctx, next) {
 	let query = ctx.request.query;
 	let page = parseInt(query.page);
@@ -179,7 +221,7 @@ router.get('/lists/:id',  async function (ctx, next) {
 	ctx.body = ret;
 });
 // 库存查询
-router.get('/stocks',  async function (ctx, next) {
+router.get('/subStocks',  async function (ctx, next) {
 	let query = ctx.request.query;
 	let page = parseInt(query.page);
 	let rows = parseInt(query.rows);
@@ -191,15 +233,14 @@ router.get('/stocks',  async function (ctx, next) {
 	if (eval(query._search.toLowerCase())) {
 		let filter = query.filters;
 		let  where={};
-		where['$match'] = {pId:{$eq:ctx.session.user.pId}};
+		where['$match'] = {pId:ctx.session.user.pId,num:{$gt:0}};
 		if(ctx.session.user.shop){
 			where['$match'].sId={$eq:ctx.session.user.shop};
 		}
-		let projection={};
 		let sidx = query.sidx;
 		let sort = {};
 		sort[sidx] = query.sord == "asc"?1:-1;
-		if (filter != "") {
+		if (filter  && filter != "") {
 			let filters = JSON.parse(filter);
 			let groupOp = filters.groupOp;
 			let rules = filters.rules;
@@ -221,7 +262,7 @@ router.get('/stocks',  async function (ctx, next) {
 					let terms = OpMap(op,data);
 					if(where['$match'][field]){
 						for(let item in terms) {
-							where['$match'][field][item] = terms[item]; // 重复条件最后一个生效
+							where['$match'][field][item] = terms[item];
 							break;
 						}
 					}else{
@@ -233,31 +274,39 @@ router.get('/stocks',  async function (ctx, next) {
 			let data = formatData(query.searchField,query.searchString);
 			where['$match'][query.searchField] = OpMap(query.searchOper,data);
 		}
-		let res = await ctx.mongodb.db.collection('stocks').aggregate([where,
+		let res = await ctx.mongodb.db.collection('subStocks').aggregate([where,
 			{
-				$project: {
-					_id:1,
-					"date" : 1,
-					"gId" : 1,
-					"sId" : 1,
-					"suId" :1,
-					"price" : 1,
-					"remarks" : 1,
-					num:{$subtract:[{$subtract:[{$subtract:["$num","$sNum"]},"$tNum"]},"$uNum"]}
+				$lookup:{
+					from: "stocks",
+					localField: "dId",
+					foreignField: "_id",
+					as: "stocks"
 				}
 			},
 			{
-				$match: {
-					$expr: {
-						$gt: ["$num", 0]
-					}
+				$unwind: {
+					path: "$stocks",
+					preserveNullAndEmptyArrays: true
+				}
+			},
+			{
+				$project: {
+					pId: 1,
+					dId:1,
+					gId: "$stocks.gId",
+					sId:1,
+					suId:"$stocks.suId",
+					date: "$stocks.date",
+					num: 1,
+					price: "$stocks.price",
+					rem: 1
 				}
 			},
 			{$sort : sort},
 			{$skip: (page-1)*rows},
 			{$limit: rows}
 		]).toArray();
-		let counts  = res.length;
+		let counts = res.length;
 		ret["total"] = Math.ceil(counts / rows);
 		ret["records"] = counts;
 		ret["rows"] = res;
@@ -269,49 +318,48 @@ router.post('/',async function (ctx, next) {
 	let body = ctx.request.body;
 	let lists = body.lists || [];
 	for(let i =0;i<lists.length;i++){
+		lists[i].pId = ctx.session.user.pId;
+		lists[i].oId = ctx.session.user.account;
+		lists[i].sId = ctx.session.user.shop;
+		lists[i].cId = body.cId; // 客户
+		lists[i].payId = body.payId; // 支付方式
+		lists[i].tId=body.tId; // 运输方式
+		lists[i].mode = body.mode; // 批发零售
+		lists[i].date =  body.date?new Date(body.date):new Date();
 		lists[i].num = Number(lists[i].num);
+		lists[i].should = ctx.mongodb.connect.Decimal128.fromString(lists[i].should);// 应收
+		lists[i].proceed = ctx.mongodb.connect.Decimal128.fromString(lists[i].proceed);// 总实收款=数量*单价
+		lists[i].arrears = ctx.mongodb.connect.Decimal128.fromString(lists[i].arrears);// 欠款
+		lists[i].audit="1"; // 待审核
 	}
-	let data = {
-		_id:body._id,
-		pId:ctx.session.user.pId,
-		aId:ctx.session.user.account,// 销售账户
-		sId:ctx.session.user.shop, // 商店
-		cId : body.cId,
-		payId : Number(body.payId), // 支付方式
-		should:ctx.mongodb.connect.Decimal128.fromString(body.should), // 应收
-		proceed :ctx.mongodb.connect.Decimal128.fromString(body.proceed),//实收款
-		arrears : ctx.mongodb.connect.Decimal128.fromString(body.arrears),// 欠款
-		date : new Date(body.date),
-		lists:lists,
-		audit:1,
-	};
+	//
 	/*for(let i in body.lists){
 		// ctx.assert(body.lists[i], 400, "参数错误!",{details:{ i: "未定义"}});
 		body.lists[i].num = Number(body.lists[i].num);
 	}*/
-	let res = await ctx.mongodb.db.collection('sales').insertOne(data);
-	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
-	for(let i = 0;i< lists.length;i++){
-		await ctx.mongodb.db.collection('stocks').update({_id:lists[i].pId},{$inc:{sNum:lists[i].num}});
-	}
-	ctx.body = {id:res.insertedId};
-});
-// 添加子项目
-router.post('/:id',async function (ctx, next) {
-	let body = ctx.request.body;
-	let id = ctx.params.id;
-	let data = {
-		_id:body._id,
-		pId:body.pId,
-		gId:body.gId,
-		num:Number(body.num)
+	let transData = {
+		_id:shortId.uuid(),
+		type:0, // 添加事务集合
+		items:[],
+		state:0 // initial
 	};
-	let res = await ctx.mongodb.db.collection('sales').update({_id:id},
-		{$push:{lists:data},$set:{'should':Number(body.should)}},{upsert:true,multi:false});
-	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
-	res = await ctx.mongodb.db.collection('stocks').update({_id:data.pId},{$inc:{sNum:data.num}});
-	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
-	ctx.body = {id:res.result};
+	for(let i =0,l = lists.length;i<l;i++){
+		let SubTrans = {
+			_id:shortId.uuid(),
+			type:1, // 分库(添加)
+			s_id:lists[i].subId, // 分库存
+			s_c:"subStocks", // 源库
+			args:lists[i],
+			d_id:lists[i]._id,
+			d_c:"sales", // 目标库
+			state:-1 // initial 之前,需要事务集合去修改为0
+		};
+		transData.items.push(SubTrans);
+	}
+	let res = await ctx.mongodb.db.collection('transactions').insertOne(transData);
+	ctx.assert(res.insertedCount, 503, "服务器无法处理当前请求",{details:"不能执行的操作"});
+	ctx.body = {id:0};
+	ctx.body = {id:res.insertedId};
 });
 // 更新
 router.put('/:id', async function (ctx, next) {
@@ -319,13 +367,16 @@ router.put('/:id', async function (ctx, next) {
 	let id = ctx.params.id;
 	let data = {
 		cId : body.cId,
-		payId : Number(body.payId), // 支付方式
 		should:ctx.mongodb.connect.Decimal128.fromString(body.should), // 应收
 		proceed :ctx.mongodb.connect.Decimal128.fromString(body.proceed),//实收款
 		arrears : ctx.mongodb.connect.Decimal128.fromString(body.arrears),// 欠款
 		lists:body.lists||[],
-		date : new Date(body.date)
+		date : body.date?new Date(body.date):new Date()
 	};
+	data.payId = Number(body.payId); // 支付方式
+	data.tId=body.tId; // 运输方式
+	data.mode = Number(body.mode); // 批发零售
+	data.remarks = body.remarks;
 	// update({_id:id},{$set:data});
 	let res = await ctx.mongodb.db.collection('sales').findAndModify({_id:id},[],{$set:data},{remove:false,new:false});
 	ctx.assert(res.ok, 503, "服务器无法处理当前请求",{details:{ result: res.ok}});
@@ -338,46 +389,14 @@ router.put('/:id', async function (ctx, next) {
 
 	ctx.body = {id:res.ok};
 });
-// 更新子项目
-router.put('/:pId/:id', async function (ctx, next) {
-	let body = ctx.request.body;
-	let pId = ctx.params.pId;
-	let id = ctx.params.id;
-	let data ={
-		"lists.$.num":Number(body.num),
-		'should':Number(body.should)
-	};
-	let res = await ctx.mongodb.db.collection('sales').update({_id:pId,'lists._id': id}, //'lists': {'$elemMatch': {'_id': id}}
-		{$set:data});
-	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
-	res = await ctx.mongodb.db.collection('stocks').update({_id:body.oldPid},{$inc:{sNum:(body.num-body.oldNum)}});
-	ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
-	ctx.body = {id:res.result};
-});
 // 删除
 router.delete('/:id',async function (ctx, next) {
 	let id = ctx.params.id;
-	let res = await ctx.mongodb.db.collection('sales').findAndModify({_id:id},[],{},{remove:true,new:false});
+	let res = await ctx.mongodb.db.collection('sales').findAndModify({_id:id,pId:ctx.session.user.pId},[],{},{remove:true,new:false});
 	ctx.assert(res.ok, 503, "服务器无法处理当前请求",{details:{ result: res.ok}});
 	for (let i =0,len = res.value.lists?res.value.lists.length:0;i<len;i++){
 		await ctx.mongodb.db.collection('stocks').update({_id:res.value.lists[i].pId},{$inc:{sNum:-res.value.lists[i].num}});
 	}
 	ctx.body = res.ok;
-});
-// 删除子项
-router.delete('/:pId/:id',async function (ctx, next) {
-	// let query = ctx.request.query;
-	let pId = ctx.params.pId;
-	let id = ctx.params.id;
-	let res = await ctx.mongodb.db.collection('sales').findAndModify({_id:pId},[],{$pull:{lists:{_id:id}}},{remove:false,new:false});
-	ctx.assert(res.ok, 503, "服务器无法处理当前请求",{details:{ result: res.ok}});
-	if(res.value){
-		if(res.value.lists){
-			await ctx.mongodb.db.collection('stocks').update({_id:res.value.lists[0].pId},{$inc:{sNum:-res.value.lists[0].num}});
-		}
-	}
-	//res = await ctx.mongodb.db.collection('stocks').update({_id:query.pId},{$inc:{sNum:-query.oldNum}});
-	//ctx.assert(res.result.ok, 503, "服务器无法处理当前请求",{details:{ result: res.result.ok}});
-	ctx.body = res.ok;//result.nModified;
 });
 module.exports = router;

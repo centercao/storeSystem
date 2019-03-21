@@ -2,62 +2,66 @@
 <html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<link rel="stylesheet" type="text/css" href="jqgrid/css/ui.jqgrid.css" />
-	<link rel="stylesheet" href="select2/css/select2.css" />
-	<link rel="stylesheet" type="text/css"  href="themes/<%= theme %>/jquery-ui.min.css" />
-	<script type="text/javascript" src="js/jquery-3.3.1.min.js"></script>
-	<script type="text/javascript" src="jqGrid/js/grid.locale-cn.js"></script>
-	<script type="text/javascript" src="jqGrid/js/jquery.jqGrid.js"></script>
-	<script type="text/javascript" src="js/jquery-ui.min.js"></script>
-	<script type="text/javascript" src="select2/js/pinyin.min.js" ></script>
-	<script type="text/javascript" src="select2/js/select2.full.js" ></script>
-	<script type="text/javascript" src="select2/js/zh-CN.js" ></script>
-	<script type="text/javascript" src="js/index.js"></script>
-	<script type="text/javascript" src="js/jsNodeId.js"></script>
+	<link rel="stylesheet" type="text/css" href="/jqGrid/css/ui.jqgrid.css" />
+	<link rel="stylesheet" type="text/css" href="/select2/css/select2.css" />
+	<link rel="stylesheet" type="text/css" href="/themes/<%= theme %>/jquery-ui.min.css" />
+
+	<script type="text/javascript" src="/js/jquery-3.3.1.min.js"></script>
+	<script type="text/javascript" src="/jqGrid/js/grid.locale-cn.js"></script>
+	<script type="text/javascript" src="/jqGrid/js/jquery.jqGrid.js"></script>
+	<script type="text/javascript" src="/js/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="/select2/js/pinyin.min.js" ></script>
+	<script type="text/javascript" src="/select2/js/select2.full.js" ></script>
+	<script type="text/javascript" src="/select2/js/zh-CN.js" ></script>
+	<script type="text/javascript" src="/js/index.js"></script>
+	<script type="text/javascript" src="/js/jsNodeId.js"></script>
 	<style type="text/css">
 		* {
 			margin: 0;
 			padding: 0;
 			font-size: small;
 		}
-		.ui-jqgrid-caption{
-			display: none;
+		html, body {
+			/*overflow-x: hidden;*/
+			-ms-overflow-style: scrollbar;
+			height: 100%;
+			box-sizing: border-box;
 		}
 	</style>
 </head>
 <body>
-<table id="list"></table>
-<div id="pager"></div>
+<div id="list_1" style="padding:5px;">
+	<table id="list"></table>
+	<div id="pager"></div>
+</div>
 <script type="text/javascript">
 	$(function(){
 		$(window).resize(function(){
 			$(window).unbind("onresize");
-			$("#list").jqGrid('setGridWidth', $(window).width()-8);//.jqGrid('setGridHeight', winWh.WinH-86);
+			$("#list").jqGrid('setGridWidth', $("#list_1").width());//.jqGrid('setGridHeight', winWh.WinH-86);
 			$(window).bind("onresize", this);
 		});
 	});
-	// $.fn.select2.defaults.theme_default = "jquery-ui";
-	$(document).ready(
-		function() {
-			// $.fn.select2.defaults.set("theme", "<%= theme %>");
+	$(document).ready(function() {
 			jQuery("#list").jqGrid({
 				hidegrid: false,
-				url:'/customers/list', //
+				url:'/customers/lists',
 				datatype: "json",
-				/*dataType:'local',*/
 				mtype : "GET",
-				// postData:{'keyword':encodeURI(encodeURI(keyword))},
-				// loadonce:true,
 				shrinkToFit:true,
 				height: 'auto',
 				width:"100%",
 				autowidth:true,
 				colModel:[
-					{label:'姓名', name:'_id',index:'_id', hidden:true,editable : false}, //width:60,
-					{label:'姓名',name:'name',index:'name',editor:"text", editable : true},
-					{label:'公司',name:'company',index:'company',editor:"text", editable : true},
-					{label:'地址',name:'address',index:'address',editor:"text", editable : true},
+					{label:'ID', name:'_id',index:'_id', hidden:true,editable : false}, //width:60,
+					{label:'姓名',name:'name',index:'name',editor:"text", editable : true,
+						editrules: {required: true},
+						formoptions: {
+							elmprefix: '<span style="color: red;">*</span>'
+						}},
 					{label:'电话',name:'telephone',index:'telephone',editor:"text", editable : true},
+					{label:'地址',name:'address',index:'address',editor:"text", editable : true},
+					{label:'公司',name:'company',index:'company',editor:"text", editable : true},
 					{label:'备注',name:'remarks',index:'remarks',sortable : false,editable : true,
                         edittype : "textarea",editoptions : {rows : "2",cols : "20"}}
 				],
@@ -67,7 +71,6 @@
 				rowNum:10,
 				rowList:[10,20,30],
 				pager:"#pager",
-				caption: "<%= title %>",
 				multiselect: false,
 				jsonReader: {
 					id: "_id",
@@ -85,17 +88,11 @@
 					checkOnSubmit:false, closeAfterEdit: true,reloadAfterSubmit:false,modal: true,
 					url:"/customers",
 					mtype:"put",
-					beforeShowForm : function(form) {
-						form.find('#account').attr('readOnly',true);//把编辑框中的字段设置为只读的。
+					errorTextFormat: function (data) {
+						return "错误代码:" + data.status + ",信息:" + (data.responseText || data.statusText);
 					},
 					onclickSubmit: function(params, postData) {
 						params.url = "/customers/" + postData.list_id;
-						return [true,''];
-					},
-					beforeSubmit:function(postData, formid) {
-						return [true,''];
-					},
-					afterSubmit:function(response, postData){
 						return [true,''];
 					}
 				},
@@ -103,8 +100,8 @@
 					checkOnSubmit:false, closeAfterAdd: true,reloadAfterSubmit:false,modal: true,jqModal: true,addedrow:'last',
 					url:"/customers",
 					mtype:"post",
-					onclickSubmit: function(params, postData) {
-						return [true,''];
+					errorTextFormat: function (data) {
+						return "错误代码:" + data.status + ",信息:" + (data.responseText || data.statusText);
 					},
 					beforeSubmit:function(postData, formid) {
 						postData._id = jsShortId.gen(15);
@@ -120,6 +117,9 @@
 					checkOnSubmit:false, reloadAfterSubmit:false,modal: true,
 					url:"/customers",
 					mtype:"delete",
+					errorTextFormat: function (data) {
+						return "错误代码:" + data.status + ",信息:" + (data.responseText || data.statusText);
+					},
 					onclickSubmit: function(params, postData) {
 						params.url = "/customers/" + postData;
 						return [true,''];

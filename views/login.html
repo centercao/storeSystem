@@ -176,6 +176,17 @@
         </section>
     </section>
 <script type="text/javascript">
+	// var httpRequest = null;
+	// function SendRequest () {
+	// 	if (httpRequest) {
+	// 		// The requested file must be in the same domain that the page is served from.
+	// 		var url = "/";
+	// 		httpRequest.open ("GET", url, true);    // async
+	// 		httpRequest.setRequestHeader ("Authorization", "abcd");
+	// 		httpRequest.onreadystatechange = OnStateChange;
+	// 		httpRequest.send (null);
+	// 	}
+	// }
 	(function ($) {
         $(document).ready(function () {
 	        $('.loginForm').on('submit',function (event) {
@@ -220,6 +231,7 @@
 					        return;
 				        }
 				        window.location.href = '/';
+				        xhr.setRequestHeader("Authorization","aaaabbbb");
 			        }
 		        });
 		        event.preventDefault();

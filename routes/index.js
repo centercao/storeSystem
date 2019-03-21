@@ -13,6 +13,22 @@ router.get('/', async (ctx, next) => {
     userName:ctx.session.user.name,userImage:ctx.session.user.image
   });
 });
-
-
-module.exports = router
+router.get('/index/rightItems',  async function (ctx, next) {
+  // let query = ctx.request.query;
+  let  where;
+  let projection={_id:0};
+  where={};
+  let rights = await ctx.mongodb.db.collection('functions').find(where).project(projection).toArray();
+  for(let i=rights.length-1;i>=0;i--){
+    for(let key in rights[i].items){
+      if(!ctx.session.user.rights.includes(key)){
+        delete rights[i].items[key];
+      }
+    }
+    if(Object.keys(rights[i].items).length == 0){
+      rights.splice(i, 1);
+    }
+  }
+  ctx.body = rights;
+});
+module.exports = router;
