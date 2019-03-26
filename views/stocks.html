@@ -105,6 +105,11 @@
 		},
 		buttons:{
 			"确定":function(){
+                var gr = $("#list").jqGrid('getGridParam', 'selrow');
+                $("#list").jqGrid('editGridRow', gr, {
+                    height : 300,
+                    reloadAfterSubmit : false
+                });
 				var form = $("#dialogForm");
 				var data = {};
 				data._id = jsShortId.gen(15);

@@ -26,9 +26,9 @@ const app = new Koa();
 app.keys = ['this is my secret'];//我理解为一个加密的钥匙，类似一个token
 const formatOutput = new FormatOutput();
 const logger = new LogFile({
-	appenders: {file: {filename: __dirname + "/logs/api.log", maxLogSize: 2048000}},
+	appenders: {file: {filename: __dirname + "/logs/api.log", maxLogSize: 20480000}},
 	categories: {
-		file:{appenders: ['file'], level: 'debug'}
+		file:{appenders: ['file'], level: 'error'}
 	},
 	pm2InstanceVar: 'INSTANCE_ID_API'
 });
@@ -62,7 +62,7 @@ trans.mongodb = mongodb;
 
 app.use(session({
 	key: 'koa:sess-store', /** cookie的名称，可以不管 */
-	maxAge: 7200000, /** 86400000 cookie的过期时间 maxAge in ms (default is 1 days) */
+	maxAge: 259200000, /** 86400000 cookie的过期时间 maxAge in ms (default is 1 days) */
 	overwrite: true, /** (boolean) can overwrite or not (default true) */
 	httpOnly: true, /** cookie是否只有服务器端可以访问 httpOnly or not (default true) */
 	signed: true, /** 签名默认true */
@@ -79,19 +79,19 @@ app.use(views(__dirname + '/views', {
 app.use(async (ctx, next) => {
 	let start = Date.now();
 	try {
-		console.log(chalk.green('%s') + chalk.gray(' <--')
+		/*console.log(chalk.green('%s') + chalk.gray(' <--')
 			+ chalk.bold(' %s')
 			+ chalk.gray(' %s'),
 			(new Date(start)).format('yyyy-M-d h:m:s.S'),
 			ctx.method,
-			ctx.originalUrl);
+			ctx.originalUrl);*/
 		ctx.state.ApiError = apiError;
 		await next();
 		let end = Date.now();
 		let ms =time(start,end);
 		//记录响应日志
 		logger.debug(formatOutput.formatRes(ctx,ms));
-		console.log(chalk.green('%s')
+		/*console.log(chalk.green('%s')
 			+ chalk.gray(' -->')
 			+ chalk.bold(' %s')
 			+ chalk.gray(' res:%s')
@@ -101,14 +101,14 @@ app.use(async (ctx, next) => {
 			ctx.method,
 			JSON.stringify(ctx.body),
 			ctx.response.status,
-			ms);
+			ms);*/
 	} catch (error) {
 		let end = Date.now();
 		let ms =time(start,end);
 		// 错误信息开始
 		// logger.error(`${ctx.method} ${ctx.url} - ${ms}ms ctx.response.status: ${ctx.response.status}`);
 		logger.error(formatOutput.formatError(ctx,error,ms));
-		console.log(chalk.red('%s')
+		/*console.log(chalk.red('%s')
 			+ chalk.gray(' -->')
 			+ chalk.bold(' %s')
 			+ chalk.gray(' res:%s')
@@ -118,7 +118,7 @@ app.use(async (ctx, next) => {
 			ctx.method,
 			JSON.stringify(ctx.body),
 			ctx.response.status,
-			ms);
+			ms);*/
 	}
 });
 // Format output

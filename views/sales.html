@@ -3,23 +3,24 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link type="text/css" href="jQuery-Timepicker-Addon/1.6.3/css/jquery-ui-timepicker-addon.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="select2/css/select2.css"/>
-    <link rel="stylesheet" href="jqGrid/css/ui.jqgrid.css"/>
-    <!--<link rel="stylesheet" href="jqGrid/css/ui.jqgrid-for-bootstrap4.css"/>-->
-    <link rel="stylesheet" type="text/css" href="themes/<%= theme %>/jquery-ui.min.css"/>
+    <link type="text/css" href="/jQuery-Timepicker-Addon/1.6.3/css/jquery-ui-timepicker-addon.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="/select2/css/select2.css"/>
+    <link rel="stylesheet" href="/jqGrid/css/ui.jqgrid.css"/>
+    <!--<link rel="stylesheet" href="/jqGrid/css/ui.jqgrid-for-bootstrap4.css"/>-->
+    <link rel="stylesheet" type="text/css" href="/themes/<%= theme %>/jquery-ui.min.css"/>
 
-    <script type="text/javascript" src="js/jquery-3.3.1.min.js"></script>
-    <script type="text/javascript" src="js/jquery-ui.js"></script>
-    <script type="text/javascript" src="jqGrid/js/grid.locale-cn.js"></script>
-    <script type="text/javascript" src="jqGrid/js/jquery.jqGrid.js"></script>
-    <script type="text/javascript" src="select2/js/pinyin.min.js"></script>
-    <script type="text/javascript" src="select2/js/select2.full.js"></script>
-    <script type="text/javascript" src="select2/js/zh-CN.js"></script>
-    <script type="text/javascript" src="jQuery-Timepicker-Addon/1.6.3/js/jquery-ui-timepicker-addon.js"></script>
-    <script type="text/javascript" src="jQuery-Timepicker-Addon/1.6.3/js/jquery-ui-timepicker-zh-CN.js"></script>
-    <script type="text/javascript" src="js/index.js"></script>
-    <script type="text/javascript" src="js/jsNodeId.js"></script>
+    <script type="text/javascript" src="/js/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="/js/jquery-ui.js"></script>
+    <script type="text/javascript" src="/jqGrid/js/grid.locale-cn.js"></script>
+    <script type="text/javascript" src="/jqGrid/js/jquery.jqGrid.js"></script>
+    <script type="text/javascript" src="/select2/js/pinyin.min.js"></script>
+    <script type="text/javascript" src="/select2/js/select2.full.js"></script>
+    <script type="text/javascript" src="/select2/js/zh-CN.js"></script>
+    <script type="text/javascript" src="/jQuery-Timepicker-Addon/1.6.3/js/jquery-ui-timepicker-addon.js"></script>
+    <script type="text/javascript" src="/jQuery-Timepicker-Addon/1.6.3/js/jquery-ui-timepicker-zh-CN.js"></script>
+    <script type="text/javascript" src="/js/index.js"></script>
+    <script type="text/javascript" src="/js/jsNodeId.js"></script>
+    <script type="text/javascript" src="/js/jquery.print.js"></script>
     <style type="text/css">
         * {
             margin: 0;
@@ -33,12 +34,16 @@
             height: 100%;
             box-sizing: border-box;
         }
+        @media print {
+
+        }
+
     </style>
 </head>
 <body class="ui-widget-content">
-<div id="list_1" style="padding:5px;">
+<div id="list_1" style="padding:5px;" class="print_table">
     <table id="list"></table>
-    <div id="pager"></div>
+    <div id="pager" class="no-print"></div>
 </div>
 <div id="list_2" style="padding:5px;box-sizing: content-box;">
     <table id="list1"></table>
@@ -327,7 +332,7 @@
 		// 销售单列数据
 		var salesColModel = [
 			{label: 'ID', name: '_id', index: '_id', hidden: true, editable: false}, //width:60
-			{
+			/*{
 				label: '提交',
 				name: 'audit',
 				index: 'audit',
@@ -339,7 +344,7 @@
 				editoptions: {
 					value: {0: '未提交', 1: '已提交', 2: '已审核'}
 				}
-			},
+			},*/
 			{label: '客户', name: 'cId', index: 'cId', editor: "text", edittype: "select", editable: true,
 				formatter: function (cellvalue, options, rowObject) {
 					var values = $("#list").jqGrid('getColProp', 'cId').editoptions.value;
@@ -593,7 +598,7 @@
 			rowNum: 5,
 			rowList: [5, 10],
 			pager: "#pager",
-			caption: "销售单",
+			caption: "销售单-" +'<%= shop %>',
 			multiselect: false,
 			// toppager:true,
 			editable: true,
@@ -625,7 +630,7 @@
 				var subGrid_table_id, pager_id;
 				subGrid_table_id = subGrid_id + "_t";
 				pager_id = "p_" + subGrid_table_id;
-				$("#" + subGrid_id).html("<table id='" + subGrid_table_id + "' class='scroll'></table><div id='" + pager_id + "' class='scroll'></div>");
+				$("#" + subGrid_id).html("<table id='" + subGrid_table_id + "' class='scroll'></table><div id='" + pager_id + "' class='scroll no-print'></div>");
 				var options = {
 					// url: 'clientArray' ,//+ row_id,
 					datatype: "json",
@@ -636,7 +641,7 @@
 					rownumbers: true,
 					deepempty: true,
 					height: 'auto', //auto
-					width: "600",
+					width: 700,
 					// autowidth: true,
 					colModel: salesItemsColModel,
 					sortname: '_id',
@@ -890,7 +895,17 @@
 					return [true, ""];
 				}
 			} // search
-		);
+		).jqGrid('navButtonAdd', '#pager', { // sub un
+            caption: '',
+            title: '打印',
+            buttonicon:"ui-icon-print",
+            onClickButton: function () {
+                $("#list_1").print({
+                    title:"销售单",
+                    stylesheet:"/css/css.css"
+                    });
+            },
+        });;
 		jQuery("#list1").jqGrid({
 			url: '/sales/subStocks',
 			datatype: "json",
@@ -926,7 +941,11 @@
 				del: false,
 				search: true,
 				refresh: false
-			},{}, {}, {}, {multipleSearch: true, closeAfterSearch: true});
+			},{
+        }, {
+            beforeShowForm: function (form) {
+            },
+        }, {}, {multipleSearch: true, closeAfterSearch: true});
 	});
 </script>
 </body>

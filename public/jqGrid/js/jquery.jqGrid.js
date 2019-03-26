@@ -12299,11 +12299,11 @@ $.jgrid.extend({
 						}
 					}
 					for(j=0, cml = cm.length; j < cml; j++) {
-						if(grp.hideFirstGroupCol) {
+						/*if(grp.hideFirstGroupCol) {
 							if(!cm[j].hidden && grp.groupField[0] === cm[j].name) {
-								cm[j].formatter = function(){return '';};
+								// cm[j].formatter = function(){return '';}; // 第一个分组不格式化
 							}
-						}
+						}*/
 						if(cm[j].summaryType ) {
 							if(cm[j].summaryDivider) {
 								grp.summary.push({nm:cm[j].name,st:cm[j].summaryType, v: '', sd:cm[j].summaryDivider, vd:'', sr: cm[j].summaryRound, srt: cm[j].summaryRoundType || 'round'});
@@ -12574,11 +12574,12 @@ $.jgrid.extend({
 				hid = clid+"_"+i;
 				icon = "<span style='cursor:pointer;margin-right:8px;margin-left:5px;' class='" + common.icon_base +" "+pmrtl+"' onclick=\"jQuery('#"+$.jgrid.jqID($t.p.id)+"').jqGrid('groupingToggle','"+hid+"');return false;\"></span>";
 				try {
-					if ($.isArray(grp.formatDisplayField) && $.isFunction(grp.formatDisplayField[n.idx])) {
+					/*if ($.isArray(grp.formatDisplayField) && $.isFunction(grp.formatDisplayField[n.idx])) {
 						gv = grp.formatDisplayField[n.idx].call($t, n.displayValue, n.value, $t.p.colModel[cp[n.idx]], n.idx, grp);
 					} else {
 						gv = $t.formatter(hid, n.displayValue, cp[n.idx], n.value );
-					}
+					}*/
+					gv = $t.formatter(hid, n.displayValue, cp[n.idx], n.value );// 显示问题
 				} catch (egv) {
 					gv = n.displayValue;
 				}

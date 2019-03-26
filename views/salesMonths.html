@@ -73,7 +73,7 @@
         },
         buttons:{
             "搜索":function(){
-                $("#salesSearch").dialog("close");
+	            $("#salesSearch").dialog("close");
                 var url = "/salesMonths/lists?startTime=" +  $("#startTime").datetimepicker('getDate') +
                     "&endTime=" +  $("#endTime").datetimepicker('getDate');
                 $("#list_1 div").remove();
@@ -133,30 +133,22 @@
 	}
 
 	var goods = getGoodsOptions();
-
     function pageInit(url) {
-        jQuery("#list").jqGrid("jqPivot",
+        $("#list").jqGrid("jqPivot",
             url,
-            {
-                rowTotals: true,
+            {rowTotals: true,
+	            rowTotalsText:"Sumary",
                 colTotals: true,
                 // footerTotals: true,
-                totalText: "Sumary",
                 footerAggregator: "sum",
                 //totals: true,
                 groupSummaryPos: "footer",
                 frozenStaticCols:true,
                 xDimension: [
-                    {dataName: "gId", label: "品类", sortorder: "desc",summaryType: function() { return true;},summaryTpl: "小计:",
-                        sortable:false,},
-                    {
-                        label: '店铺',
-                        dataName: 'sId',
-                        index: 'sId',
-                        editor: "text",
-                        formatter: "select",
-                        edittype: "select",
-                        editable: false,
+                    {dataName: "gId", label: "品类",width:80, sortorder: "desc",summaryType: function() { return true;},summaryTpl: "小计:",
+                        sortable:false,isGroupField :true,formatter:"select",editoptions: {
+		                    value: getGoodsOptions()}},
+                    { label: '店铺',dataName: 'sId',width:80, index: 'sId',editor: "text", formatter: "select",edittype: "select",
                         sortable:false,
                         editoptions: {
                             value: getShopNames(),
@@ -196,12 +188,11 @@
                     {member: "profits", aggregator: "sum", summaryType: "sum", label: "利润",sortable:false,search:false}
                 ]
             },
-            {
-                // caption: "销售统计",
-                shrinkToFit: true,
-                height: 'auto',
-                width: "100%",
+            {// caption: "销售统计",
+                shrinkToFit: false,
+               //  width: "100%",
                 autowidth: true,
+	            height: 'auto',
                 autoResizing: {compact: true},
                 rowNum: 10,
                 rowList: [10, 20, 100, "10000:All"],
@@ -221,7 +212,7 @@
             {
                 reader: function (obj) {
                     for (var i in obj.rows) {
-                        obj.rows[i].gId = goods[obj.rows[i].gId];
+                       // obj.rows[i].gId = goods[obj.rows[i].gId];
                         obj.rows[i].proceed = obj.rows[i].proceed.$numberDecimal;
                         var date = new Date(obj.rows[i].date);
                         obj.rows[i].year = date.getFullYear();

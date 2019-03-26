@@ -50,7 +50,7 @@ function formatData(field,dd) {
 // 返回用户页面
 router.get('/',  async function (ctx, next) {
 	await ctx.render('sales', {
-		title:"销售管理",theme:ctx.session.user.theme
+		title:"销售管理",theme:ctx.session.user.theme,shop:"华南店"
 	});
 });
 // 获得信息

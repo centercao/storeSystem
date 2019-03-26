@@ -136,7 +136,7 @@ router.put('/:id/right', async function (ctx, next) {
 	let id = ctx.params.id;
 	let res; // ctx.mongodb.ObjectID(id)
 	if(body.check == "1"){
-		res = await ctx.mongodb.db.collection('users').updateOne({_id:id},{ $push: { rights:body.id}});
+		res = await ctx.mongodb.db.collection('users').updateOne({_id:id},{ $addToSet: { rights:body.id}});
 	}else {
 		res = await ctx.mongodb.db.collection('users').updateOne({_id:id},{ $pull: { rights:body.id}});
 	}

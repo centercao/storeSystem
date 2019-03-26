@@ -147,10 +147,10 @@
                 groupSummaryPos: "footer",
                 frozenStaticCols:true,
                 xDimension: [
-                    {dataName: "gId", label: "品类", sortorder: "desc",summaryType: function() { return true;},summaryTpl: "小计:",
+                    {dataName: "gId",width:80, label: "品类", sortorder: "desc",summaryType: function() { return true;},summaryTpl: "小计:",
                         sortable:false,},
                     {
-                        label: '店铺',
+                        label: '店铺',width:80,
                         dataName: 'sId',
                         index: 'sId',
                         editor: "text",
@@ -192,10 +192,10 @@
             },
             {
                 // caption: "销售统计",
-                shrinkToFit: true,
-                height: 'auto',
-                width: "100%",
+                shrinkToFit: false,
+               //  width: "100%",
                 autowidth: true,
+	            height: 'auto',
                 autoResizing: {compact: true},
                 rowNum: 10,
                 rowList: [10, 20, 100, "10000:All"],
