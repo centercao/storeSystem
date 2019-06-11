@@ -8,7 +8,7 @@
 
 	<script type="text/javascript" src="/js/jquery-3.3.1.min.js"></script>
 	<script type="text/javascript" src="/jqGrid/js/grid.locale-cn.js"></script>
-	<script type="text/javascript" src="/jqGrid/js/jquery.jqGrid.min.js"></script>
+	<script type="text/javascript" src="/jqGrid/js/jquery.jqGrid.js"></script>
 	<script type="text/javascript" src="/js/jquery-ui.min.js"></script>
 	<script type="text/javascript" src="/select2/js/pinyin.min.js" ></script>
 	<script type="text/javascript" src="/select2/js/select2.full.js" ></script>
@@ -45,35 +45,32 @@
 	$(document).ready(function() {
 			jQuery("#list").jqGrid({
 				hidegrid: false,
-				url:'/transport/lists', //
+				url:'/clients/lists',
 				datatype: "json",
-				/*dataType:'local',*/
 				mtype : "GET",
-				// postData:{'keyword':encodeURI(encodeURI(keyword))},
-				// loadonce:true,
 				shrinkToFit:true,
 				height: 'auto',
 				width:"100%",
 				autowidth:true,
 				colModel:[
 					{label:'ID', name:'_id',index:'_id', hidden:true,editable : false}, //width:60,
-					{label:'公司',name:'name',index:'name',editor:"text", editable : true,
+					{label:'姓名',name:'n',index:'n',editor:"text", editable : true,
 						editrules: {required: true},
-						formoptions: {
-							elmprefix: '<span style="color: red;">*</span>'
-						}},
-					{label:'联系人',name:'contact',index:'contact',editor:"text", editable : true},
-					{label:'地址',name:'address',index:'address',editor:"text", editable : true},
-					{label:'电话',name:'telephone',index:'telephone',editor:"text", editable : true},
-					{label:'备注',name:'remarks',index:'remarks',sortable : false,editable : true,
+						formoptions: {elmprefix: '<span style="color: red;">*</span>'}},
+					{label:'电话',name:'t',index:'t',editor:"text", editable : true,
+						editrules: {required: true},
+						formoptions: {elmprefix: '<span style="color: red;">*</span>'}},
+					{label:'地址',name:'a',index:'a',editor:"text", editable : true},
+					{label:'公司',name:'c',index:'c',editor:"text", editable : true},
+					{label:'备注',name:'r',index:'r',sortable : false,editable : true,
                         edittype : "textarea",editoptions : {rows : "2",cols : "20"}}
 				],
 				sortname:'_id',
 				sortorder:'asc',
 				viewrecords:true,
-				rowNum:-1,
+				rowNum:10,
+				rowList:[10,20,30],
 				pager:"#pager",
-				// caption: "<%= title %>",
 				multiselect: false,
 				jsonReader: {
 					id: "_id",
@@ -89,19 +86,19 @@
 			jQuery("#list").jqGrid('navGrid','#pager',{add:true,edit:true,del:true,search:false,refresh:false},
 				{ // edit
 					checkOnSubmit:false, closeAfterEdit: true,reloadAfterSubmit:false,modal: true,
-					url:"/transport",
+					url:"/clients",
 					mtype:"put",
 					errorTextFormat: function (data) {
 						return "错误代码:" + data.status + ",信息:" + (data.responseText || data.statusText);
 					},
 					onclickSubmit: function(params, postData) {
-						params.url = "/transport/" + postData.list_id;
+						params.url = "/clients/" + postData.list_id;
 						return [true,''];
 					}
 				},
 				{ // add
 					checkOnSubmit:false, closeAfterAdd: true,reloadAfterSubmit:false,modal: true,jqModal: true,addedrow:'last',
-					url:"/transport",
+					url:"/clients",
 					mtype:"post",
 					errorTextFormat: function (data) {
 						return "错误代码:" + data.status + ",信息:" + (data.responseText || data.statusText);
@@ -113,19 +110,22 @@
 					afterSubmit:function(response, postData){
 						var result=response.responseJSON;
 						// postData.id = result.id;
-						return [true,"",postData._id];
+						return [true,"",result.id];
 					}
 				},
 				{ // del
 					checkOnSubmit:false, reloadAfterSubmit:false,modal: true,
-					url:"/transport",
+					url:"/clients",
 					mtype:"delete",
 					errorTextFormat: function (data) {
 						return "错误代码:" + data.status + ",信息:" + (data.responseText || data.statusText);
 					},
 					onclickSubmit: function(params, postData) {
-						params.url = "/transport/" + postData;
+						params.url = "/clients/" + postData;
 						return [true,''];
+					},
+					afterSubmit:function(response, postData) {
+						return [true, ''];
 					}
 				},
 				{} // search

@@ -212,9 +212,8 @@
 		function addTree(data) {
 			let $tree = '';
 			$.each(data, function (i) {
-				let row = data[i];
-				$tree += '<h3 class="treeTitle">' + row.name + '</h3><ul class="menu">';
-				let childNodes = row.items;
+				$tree += '<h3 class="treeTitle">' + i + '</h3><ul class="menu">';
+				let childNodes = data[i];
 				$.each(childNodes, function (j) {
 					let nodeRow = childNodes[j];
 					$tree += '<li data-id="' + j + '" data-url="' + j +

@@ -15,20 +15,19 @@ router.get('/', async (ctx, next) => {
 });
 router.get('/index/rightItems',  async function (ctx, next) {
   // let query = ctx.request.query;
-  let  where;
-  let projection={_id:0};
-  where={};
-  let rights = await ctx.mongodb.db.collection('functions').find(where).project(projection).toArray();
-  for(let i=rights.length-1;i>=0;i--){
-    for(let key in rights[i].items){
-      if(!ctx.session.user.rights.includes(key)){
-        delete rights[i].items[key];
+  let items = {};
+  for(let item in ctx.session.user.rights){
+    let el = ctx.session.user.rights[item];
+    let f = await ctx.redis.hgetall("f:" + el);
+    if(f){
+      if(items[f.p]){
+        items[f.p][el] = f.n;
+      }else {
+        items[f.p] = {};
+        items[f.p][el] = f.n;
       }
     }
-    if(Object.keys(rights[i].items).length == 0){
-      rights.splice(i, 1);
-    }
   }
-  ctx.body = rights;
+  ctx.body = items;
 });
 module.exports = router;

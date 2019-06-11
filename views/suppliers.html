@@ -57,15 +57,17 @@
 				autowidth:true,
 				colModel:[
 					{label:'ID', name:'_id',index:'_id', hidden:true,editable : false}, //width:60,
-					{label:'公司',name:'name',index:'name',editor:"text", editable : true,
+					{label:'公司',name:'n',index:'n',editor:"text", editable : true,
 						editrules: {required: true},
-						formoptions: {
-							elmprefix: '<span style="color: red;">*</span>'
-						}},
-					{label:'联系人',name:'contact',index:'contact',editor:"text", editable : true},
-					{label:'地址',name:'address',index:'address',editor:"text", editable : true},
-					{label:'电话',name:'telephone',index:'telephone',editor:"text", editable : true},
-					{label:'备注',name:'remarks',index:'remarks',sortable : false,editable : true,
+						formoptions: {elmprefix: '<span style="color: red;">*</span>'}},
+					{label:'联系人',name:'c',index:'c',editor:"text", editable : true,
+						editrules: {required: true},
+						formoptions: {elmprefix: '<span style="color: red;">*</span>'}},
+					{label:'地址',name:'a',index:'a',editor:"text", editable : true},
+					{label:'电话',name:'t',index:'t',editor:"text", editable : true,
+						editrules: {required: true},
+						formoptions: {elmprefix: '<span style="color: red;">*</span>'}},
+					{label:'备注',name:'r',index:'r',sortable : false,editable : true,
                         edittype : "textarea",editoptions : {rows : "2",cols : "20"}}
 				],
 				sortname:'_id',

@@ -33,31 +33,29 @@ router.get('/',  async function (ctx, next) {
 // 登录
 router.post('/',async function (ctx, next) {
 	let body = ctx.request.body;
-	let pubKey0 = new NodeRSA(pubKey, 'pkcs8-public');
+	/*let pubKey0 = new NodeRSA(pubKey, 'pkcs8-public');
 	let systemInfo  =await si.system();
 	let flag = pubKey0.verify(systemInfo.serial + systemInfo.uuid, new Buffer(key,'base64'));
-	ctx.assert(flag, 400, "参数错误!",{details:"无权使用"});
+	ctx.assert(flag, 400, "参数错误!",{details:"无权使用"});*/
 	// 验证参数
 	ctx.assert(body.account, 400, "参数错误!",{details:"账户错误"});
 	ctx.assert(body.pass, 400, "参数错误!",{details:"密码不存在"});
-	let pass = cryptoPassFunc(body.pass);
 	// 验证
-	let res = await ctx.mongodb.db.collection('users').find({_id:body.account,pass:pass}).toArray();
-	ctx.assert(res.length, 400, "参数错误!",{details:"用户不存在或错误"});
+	let users = await ctx.redis.hgetall("u:" + body.account);
+	ctx.assert((users.p == cryptoPassFunc(body.pass)), 400, "参数错误!",{details:"用户不存在或错误"});
 	ctx.session.user = {};
 	ctx.session.user.account = body.account;
-	ctx.session.user.name = res[0].name;
-	ctx.session.user.rights = res[0].rights;
-	ctx.session.user.theme = res[0].theme || 'redmond'; //'redmond';
-	ctx.session.user.image = res[0].image || 'images/users/user2-160x160.jpg';
-	ctx.session.user.pId = res[0].pId =="admin"?body.account:res[0].pId;
-	ctx.session.user.shop = res[0].shop;
+	ctx.session.user.name = users.n;
+	ctx.session.user.rights = await ctx.redis.smembers("r:" + body.account);;
+	ctx.session.user.theme = users.t || 'redmond';
+	ctx.session.user.image = users.i || 'images/users/user2-160x160.jpg';
+	ctx.session.user.shop = users.s||"";
 	ctx.body = {};
 });
 // 设置UI
 router.put('/',async function (ctx, next) {
 	let body = ctx.request.body;
-	let res = await ctx.mongodb.db.collection('users').updateOne({_id:ctx.session.user.account},{$set:{theme:body.theme}});
+	await ctx.redis.hset("u:" + ctx.session.user.account, 't', body.theme);
 	ctx.session.user.theme = body.theme || 'ui-darkness'; //'ui-darkness';
 	ctx.body = {};
 });

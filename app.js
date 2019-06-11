@@ -13,6 +13,16 @@ const FormatOutput = require("./middlewares/formatOutput");
 const accessToken = require("./middlewares/accessToken");
 const Mongodb = require("./middlewares/mongodbHelper");
 const trans = require("./middlewares/transactions");
+const config = require('./config');
+const Redis = require('ioredis');
+const eventPool = require("./middlewares/eventPoolHelper");
+const redis = new Redis({
+	port: config.redis.port,          // Redis port
+	host: config.redis.host,   // Redis host
+	family: 4,           // 4 (IPv4) or 6 (IPv6)
+	password: config.redis.password,
+	db:config.redis.db
+});
 const mongodb = new Mongodb({
 	host: 'localhost',
 	port: 27017,
@@ -22,6 +32,15 @@ const mongodb = new Mongodb({
 	max: 100,
 	min: 1,
 });
+const Mqtt = require('./middlewares/mqttClientHelper');
+let options = {
+	host: "210a8d4a.all123.net",
+	port: 8243,
+	clientId: "ju7ygfa900246eY" + process.env.INSTANCE_WEB_ID||"0",
+	username:"V5bf8cuv6G",
+	password:"",
+	msgFun:msgFun
+};
 const app = new Koa();
 app.keys = ['this is my secret'];//我理解为一个加密的钥匙，类似一个token
 const formatOutput = new FormatOutput();
@@ -56,8 +75,9 @@ function time(start,end) {
 }
 // Koa 推荐使用该命名空间挂载数据
 app.context.mongodb = mongodb;
+app.context.redis = redis;
+app.context.mqtt = new Mqtt(options);
 trans.mongodb = mongodb;
-
 // middlewares
 
 app.use(session({
@@ -143,7 +163,7 @@ app.use(async (ctx, next) => {
 			return;
 		}
 	}
-	let Authorization = ctx.request.get("Authorization");
+	// let Authorization = ctx.request.get("Authorization");
 	if (!ctx.session.user) {
 		console.log('login status validate fail')
 		console.log(ctx.request.url);
@@ -185,7 +205,7 @@ app.on('error', (err, ctx) => {
 });
 
 // http 服务
-const port =  3000;
+const port =  3100;
 const service = http.createServer(app.callback()).listen(port);
 service.on('error', (error)=> {
 	if (error.syscall !== 'listen') {
@@ -226,3 +246,14 @@ let options = {
 };
 const services = https.createServer(options, app.callback()).listen(1443);
 */
+function msgFun(topic, message){
+	console.log('topic:' + topic);
+	let topics = topic.split('/');
+	switch (topics[0]) {
+		case 'db':
+			break;
+		default:
+			break;
+	}
+	console.log(message.toString());
+}
